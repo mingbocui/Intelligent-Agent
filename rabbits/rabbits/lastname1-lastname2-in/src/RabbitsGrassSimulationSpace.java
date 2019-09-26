@@ -8,8 +8,24 @@ import uchicago.src.sim.space.Object2DGrid;
 
 public class RabbitsGrassSimulationSpace {
     private int grassEnergy;
-    private final Object2DGrid grassSpace;
-    private final Object2DFrid rabbitSpace;
+    private Object2DGrid grassSpace;
+    private Object2DGrid rabbitSpace;
+
+    public Object2DGrid getGrassSpace() {
+        return grassSpace;
+    }
+
+    public void setGrassSpace(Object2DGrid grassSpace) {
+        this.grassSpace = grassSpace;
+    }
+
+    public Object2DGrid getRabbitSpace() {
+        return rabbitSpace;
+    }
+
+    public void setRabbitSpace(Object2DGrid rabbitSpace) {
+        this.rabbitSpace = rabbitSpace;
+    }
 
     public void RabbitsGrassSimulationSpace(int fieldWidth, int fieldHeight, int grassEnergy) {
         grassSpace = new Object2DGrid(fieldWidth, fieldHeight);
@@ -22,12 +38,12 @@ public class RabbitsGrassSimulationSpace {
         }
     }
 
-    public void getGrassSpace() {
-        return grassSpace;
+    public boolean moveAgentAt(int x, int y, int newX, int newY) {
+        // TODO fill this
+        return true;
     }
 
-    public void getRabbitSpace() {
-        return rabbitSpace;
+    public Object2DGrid getCurrentSpace() {
+        return this.rabbitSpace;
     }
-
 }

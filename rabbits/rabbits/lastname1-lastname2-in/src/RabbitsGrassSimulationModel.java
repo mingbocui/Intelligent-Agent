@@ -11,11 +11,14 @@ import uchicago.src.sim.engine.SimModelImpl;
  * @author
  */
 
-
 public class RabbitsGrassSimulationModel extends SimModelImpl {
+    private int gridSize = 20;
+    private int numInitRabbits;
+    private int numInitGrass;
+    private int grassGrowthRate;
+    private int birthThreshold;
 
     private Schedule schedule;
-    private int numAgents;
 
     public static void main(String[] args) {
 
@@ -44,27 +47,58 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
         return params;
     }
 
-    public String getName() {
+    public Schedule getSchedule() {
         // TODO Auto-generated method stub
         return null;
     }
 
-    public Schedule getSchedule() {
-        // TODO Auto-generated method stub
-        return null;
+    @Override
+    public String getName() {
+        return "simple rabbit model";
     }
 
     public void setup() {
         // TODO Auto-generated method stub
 
     }
-/*
-    //created by cmb
-    public int getNumAgents() {
-        return numAgents;
+
+    public int getGridSize() {
+        return gridSize;
     }
 
-    public void setNumAgents(int numAgents) {
-        numAgents = numAgents;
-    }*/
+    public void setGridSize(int gridSize) {
+        this.gridSize = gridSize;
+    }
+
+    public int getGrassGrowthRate() {
+        return grassGrowthRate;
+    }
+
+    public void setGrassGrowthRate(int grassGrowthRate) {
+        this.grassGrowthRate = grassGrowthRate;
+    }
+
+    public int getNumInitRabbits() {
+        return numInitRabbits;
+    }
+
+    public void setNumInitRabbits(int numInitRabbits) {
+        this.numInitRabbits = numInitRabbits;
+    }
+
+    public int getNumInitGrass() {
+        return numInitGrass;
+    }
+
+    public void setNumInitGrass(int numInitGrass) {
+        this.numInitGrass = numInitGrass;
+    }
+
+    public int getBirthThreshold() {
+        return birthThreshold;
+    }
+
+    public void setBirthThreshold(int birthThreshold) {
+        this.birthThreshold = birthThreshold;
+    }
 }

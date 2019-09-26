@@ -1,5 +1,8 @@
 import uchicago.src.sim.gui.Drawable;
 import uchicago.src.sim.gui.SimGraphics;
+import uchicago.src.sim.space.Object2DGrid;
+
+import java.awt.Color;
 
 
 /**
@@ -44,7 +47,6 @@ public class RabbitsGrassSimulationAgent implements Drawable {
     }
 
     public void draw(SimGraphics G) {
-        // TODO Auto-generated method stub
         G.drawFastRoundRect(Color.green); // not sure
     }
 
@@ -56,27 +58,19 @@ public class RabbitsGrassSimulationAgent implements Drawable {
         idOfRabbit = numOfRabbit;
     }
 
-    public int getX() {
-        // TODO Auto-generated method stub
-        return X;
-    }
-
-    public int getY() {
-        // TODO Auto-generated method stub
-        return Y;
-    }
+    public int getX() { return x; }
+    public int getY() { return y; }
 
     public int getIdOfRabbit() {
         return idOfRabbit;
     }
-
     public int getEnergy() {
         return energy;
     }
 
     public void report() {
         System.out.print(getIdOfRabbit() + "th rabbit" +
-                "located at" + "(" + x"," + y"), still left energy of" + getEnergy());
+                "located at" + "(" + x + "," + y + "), still left energy of" + getEnergy());
     }
 
     public void step() { // to update status
@@ -85,12 +79,9 @@ public class RabbitsGrassSimulationAgent implements Drawable {
         int newY = y + vY;
 
         Object2DGrid grid = space.getCurrentSpace();
-
     }
 
     private boolean tryMove(int newX, int newY) {
-        return cdSpace.moveAgentAt(x, y, newX, newY);
+        return space.moveAgentAt(x, y, newX, newY);
     }
-
-
 }
