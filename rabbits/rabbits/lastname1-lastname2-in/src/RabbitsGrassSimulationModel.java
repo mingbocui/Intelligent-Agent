@@ -58,7 +58,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
         // TODO Auto-generated method stub
 
     }
-
+/*
     //created by cmb
     public int getNumAgents() {
         return numAgents;
@@ -66,5 +66,5 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 
     public void setNumAgents(int numAgents) {
         numAgents = numAgents;
-    }
+    }*/
 }
