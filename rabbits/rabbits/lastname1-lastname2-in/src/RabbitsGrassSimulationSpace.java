@@ -22,4 +22,12 @@ public class RabbitsGrassSimulationSpace {
         }
     }
 
+    public void getGrassSpace() {
+        return grassSpace;
+    }
+
+    public void getRabbitSpace() {
+        return rabbitSpace;
+    }
+
 }
