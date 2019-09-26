@@ -38,12 +38,77 @@ public class RabbitsGrassSimulationSpace {
         }
     }
 
-    public boolean moveAgentAt(int x, int y, int newX, int newY) {
-        // TODO fill this
-        return true;
+    // spread certain amount of grass
+    public void spreadGrass(int grassAmount){
+        if(grassAmount<0){
+            throw new IllegalArgumentException("grassAmount must be non-negative");
+        }
+        while(grassAmount>=0){
+            int x = (int)(Math.random()*(rabbitSpace.getSizeX()));
+            int y = (int)(Math.random()*(rabbitSpace.getSizeY()));
+            int originalGrassAmount = getGrassAmountAt(x, y);
+            grassSpace.putObjectAt(x, y, originalGrassAmount+1);
+            grassAmount--;
+        }
+
     }
+
+//    public boolean moveAgentAt(int x, int y, int newX, int newY) {
+//        // implemented as function moveRabbit below
+//        return true;
+//    }
 
     public Object2DGrid getCurrentSpace() {
         return this.rabbitSpace;
     }
+
+    public boolean isOccupied(int x, int y){
+        if(rabbitSpace.getObjectAt(x, y) != null) return true;
+        else return false;
+    }
+
+    // add rabbit to the rabbit space, but just need add one agent for every call of this function?
+    public boolean addRabbit(RabbitsGrassSimulationAgent rabbit){
+        boolean flag = false;
+        while(!flag){
+            // random position
+            int x = (int)(Math.random()*(rabbitSpace.getSizeX()));
+            int y = (int)(Math.random()*(rabbitSpace.getSizeY()));
+            if(!isOccupied(x, y)){
+                rabbitSpace.putObjectAt(x,y,rabbit);
+                rabbit.setXY(x,y);
+                // rabbit's living space
+                rabbit.setSpace(this);
+                flag = true;
+            }
+        }
+        return flag;
+    }
+
+    public void removeRabbit(int x, int y){
+        rabbitSpace.putObjectAt(x,y,null);
+    }
+
+    public boolean moveRabbit(int xPre, int yPre, int xPos, int yPos){
+        if(isOccupied(xPos, yPos)) return false;
+        else{
+            RabbitsGrassSimulationAgent rabbit = (RabbitsGrassSimulationAgent) rabbitSpace.getObjectAt(xPre,yPre);
+            removeRabbit(xPre,yPre);
+            rabbit.setXY(xPos,yPos);
+            rabbitSpace.putObjectAt(xPos,yPos,rabbit);
+            return true;
+        }
+    }
+
+    // get the amount of grass at specific position
+    public int getGrassAmountAt(int x, int y){
+        if(grassSpace.getObjectAt(x,y) == null) return 0;
+        else return ((Integer)grassSpace.getObjectAt(x,y)).intValue();
+    }
+
+
+
+
+
+
 }

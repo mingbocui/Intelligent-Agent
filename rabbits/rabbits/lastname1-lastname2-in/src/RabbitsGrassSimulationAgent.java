@@ -82,6 +82,6 @@ public class RabbitsGrassSimulationAgent implements Drawable {
     }
 
     private boolean tryMove(int newX, int newY) {
-        return space.moveAgentAt(x, y, newX, newY);
+        return space.moveRabbit(x, y, newX, newY);
     }
 }
