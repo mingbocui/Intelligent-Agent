@@ -1,6 +1,10 @@
+import uchicago.src.sim.analysis.OpenSequenceGraph;
 import uchicago.src.sim.engine.Schedule;
 import uchicago.src.sim.engine.SimInit;
 import uchicago.src.sim.engine.SimModelImpl;
+import uchicago.src.sim.gui.DisplaySurface;
+
+import java.util.ArrayList;
 
 /**
  * Class that implements the simulation model for the rabbits grass
@@ -12,13 +16,35 @@ import uchicago.src.sim.engine.SimModelImpl;
  */
 
 public class RabbitsGrassSimulationModel extends SimModelImpl {
-    private int gridSize = 20;
-    private int numInitRabbits;
-    private int numInitGrass;
-    private int grassGrowthRate;
-    private int birthThreshold;
+    private static final int GRIDSIZE = 20;
+    private static final int NUMINITRABBITS = 10;
+    private static final int NUMINITGRASS = 100;
+    private static final int AMOUNTGRASSENERGY = 100;
+    private static final int GRASSGROWTHRATE = 20;
+    private static final int BIRTHTHRESHOLD = 10;
+    private static final int INITRABBITENERGY = 10;
+
+    private int gridSize = GRIDSIZE;
+    private int numInitRabbits = NUMINITRABBITS;
+    private int numInitGrass = NUMINITGRASS;
+    private int amountGrassEnergy = AMOUNTGRASSENERGY;
+    private int grassGrowthRate = GRASSGROWTHRATE;
+    private int birthThreshold = BIRTHTHRESHOLD;
+    private int initRabbitEnergy = INITRABBITENERGY;
 
     private Schedule schedule;
+    private DisplaySurface disSurf;
+    private RabbitsGrassSimulationSpace space;
+
+    private ArrayList<RabbitsGrassSimulationAgent> rabbitsList;
+
+    // creating graph to show Energy, Rabbits, Grass, etc
+    private OpenSequenceGraph sumEnergyOfRabbits;
+    private OpenSequenceGraph numOfRabbits;
+    private OpenSequenceGraph amountOfGrass;
+
+
+
 
     public static void main(String[] args) {
 
@@ -36,7 +62,13 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 
     public void begin() {
         // TODO Auto-generated method stub
-
+        buildModel();
+        buildSchedule();
+        buildDisplay();
+        disSurf.display();
+        numOfRabbits.display();
+        amountOfGrass.display();
+        sumEnergyOfRabbits.display();
     }
 
     public String[] getInitParam() {
@@ -49,7 +81,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 
     public Schedule getSchedule() {
         // TODO Auto-generated method stub
-        return null;
+        return schedule;
     }
 
     @Override
@@ -101,4 +133,41 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
     public void setBirthThreshold(int birthThreshold) {
         this.birthThreshold = birthThreshold;
     }
+
+    private void buildModel(){
+        System.out.println("Model Building Process");
+
+        //TODO DEBUG
+
+        space = new RabbitsGrassSimulationSpace();
+        space.spreadGrass(numInitGrass);
+        for(int i = 0; i < numInitRabbits; i++){
+            addNewRabbit();
+        }
+
+        // report the status of rabbits
+        for(int i = 0; i < rabbitsList.size(); i++){
+            RabbitsGrassSimulationAgent rabbit = (RabbitsGrassSimulationAgent) rabbitsList.get(i);
+            rabbit.report();
+        }
+    }
+
+
+    private void buildSchedule(){
+        // TODO
+        return;
+    }
+
+    private void buildDisplay(){
+        //TODO
+        return;
+    }
+
+    private void addNewRabbit(){
+        RabbitsGrassSimulationAgent rabbit = new RabbitsGrassSimulationAgent(initRabbitEnergy);
+        rabbitsList.add(rabbit);
+        space.addRabbit(rabbit);
+    }
+
+
 }
