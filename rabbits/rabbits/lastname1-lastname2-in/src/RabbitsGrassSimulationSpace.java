@@ -44,6 +44,7 @@ public class RabbitsGrassSimulationSpace {
             throw new IllegalArgumentException("grassAmount must be non-negative");
         }
         while(grassAmount>=0){
+            // TODO use a real random engine
             int x = (int)(Math.random()*(rabbitSpace.getSizeX()));
             int y = (int)(Math.random()*(rabbitSpace.getSizeY()));
             int originalGrassAmount = getGrassAmountAt(x, y);
@@ -63,12 +64,11 @@ public class RabbitsGrassSimulationSpace {
     }
 
     public boolean isOccupied(int x, int y){
-        if(rabbitSpace.getObjectAt(x, y) != null) return true;
-        else return false;
+        return rabbitSpace.getObjectAt(x, y) != null;
     }
 
     // add rabbit to the rabbit space, but just need add one agent for every call of this function?
-    public boolean addRabbit(RabbitsGrassSimulationAgent rabbit){
+    public void addRabbit(RabbitsGrassSimulationAgent rabbit){
         boolean flag = false;
         while(!flag){
             // random position
@@ -82,7 +82,6 @@ public class RabbitsGrassSimulationSpace {
                 flag = true;
             }
         }
-        return flag;
     }
 
     public void removeRabbit(int x, int y){

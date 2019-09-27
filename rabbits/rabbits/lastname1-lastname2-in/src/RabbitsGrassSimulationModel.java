@@ -39,6 +39,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
     private ArrayList<RabbitsGrassSimulationAgent> rabbitsList;
 
     // creating graph to show Energy, Rabbits, Grass, etc
+    // TODO rename this... somewhat confusingly named
     private OpenSequenceGraph sumEnergyOfRabbits;
     private OpenSequenceGraph numOfRabbits;
     private OpenSequenceGraph amountOfGrass;
