@@ -12,6 +12,7 @@ import uchicago.src.sim.util.SimUtilities;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Random;
 
 /**
  * Class that implements the simulation model for the rabbits grass
@@ -51,6 +52,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
     private OpenSequenceGraph numOfRabbits;
     private OpenSequenceGraph amountOfGrass;
 
+    private Random rnd;
 
     public static void main(String[] args) {
         System.out.println("Rabbit skeleton");

@@ -1,5 +1,7 @@
 import uchicago.src.sim.space.Object2DGrid;
 
+import java.util.Random;
+
 /**
  * Class that implements the simulation space of the rabbits grass simulation.
  *
@@ -11,10 +13,13 @@ public class RabbitsGrassSimulationSpace {
     private Object2DGrid grassSpace;
     private Object2DGrid rabbitSpace;
 
+    private Random rnd;
+
     public RabbitsGrassSimulationSpace(int gridSize, int grassEnergy) {
         this.grassSpace = new Object2DGrid(gridSize, gridSize);
         this.rabbitSpace = new Object2DGrid(gridSize, gridSize);
         this.grassEnergy = grassEnergy;
+        this.rnd = new Random(42);
         for (int i = 0; i < gridSize; i++) {
             for (int j = 0; j < gridSize; j++) {
                 this.grassSpace.putObjectAt(i, j, new Integer(0));
@@ -46,8 +51,8 @@ public class RabbitsGrassSimulationSpace {
         }
         while (grassAmount > 0) {
             // TODO use a real random engine
-            int x = (int)(Math.random()*(this.rabbitSpace.getSizeX()));
-            int y = (int)(Math.random()*(this.rabbitSpace.getSizeY()));
+            int x = (int)(rnd.nextDouble()*(this.rabbitSpace.getSizeX()));
+            int y = (int)(rnd.nextDouble()*(this.rabbitSpace.getSizeY()));
             int originalGrassAmount = getGrassAmountAt(x, y);
             grassSpace.putObjectAt(x, y, originalGrassAmount + 1);
             grassAmount--;
@@ -67,8 +72,8 @@ public class RabbitsGrassSimulationSpace {
         boolean flag = false;
         while(!flag){
             // random position
-            int x = (int)(Math.random()*(rabbitSpace.getSizeX()));
-            int y = (int)(Math.random()*(rabbitSpace.getSizeY()));
+            int x = (int)(rnd.nextDouble()*(rabbitSpace.getSizeX()));
+            int y = (int)(rnd.nextDouble()*(rabbitSpace.getSizeY()));
             if(!isOccupied(x, y)){
                 rabbitSpace.putObjectAt(x,y,rabbit);
                 rabbit.setXY(x,y);

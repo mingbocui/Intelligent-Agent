@@ -3,6 +3,7 @@ import uchicago.src.sim.gui.SimGraphics;
 import uchicago.src.sim.space.Object2DGrid;
 
 import java.awt.Color;
+import java.util.Random;
 
 
 /**
@@ -26,15 +27,16 @@ public class RabbitsGrassSimulationAgent implements Drawable {
     private int numOfRabbit = 0;
 
     private RabbitsGrassSimulationSpace space;
+    private Random rnd;
 
     // smart ideas from tutorial
     private void setVxVy() {
         vX = 0;
         vY = 0;
-        while ((vX == 0) && (vY == 0)) {
-            vX = (int) Math.floor(Math.random() * 3) - 1;
-            vY = (int) Math.floor(Math.random() * 3) - 1;
-        }
+        // rabbit could saty and does not move
+        vX = (int) Math.floor(rnd.nextDouble() * 3) - 1;
+        vY = (int) Math.floor(rnd.nextDouble() * 3) - 1;
+
     }
 
     public void setXY(int newX, int newY) {
@@ -56,6 +58,7 @@ public class RabbitsGrassSimulationAgent implements Drawable {
         energy = initEnergy;
         numOfRabbit++;
         idOfRabbit = numOfRabbit;
+        this.rnd = new Random(44);
     }
 
     public int getX() { return x; }
