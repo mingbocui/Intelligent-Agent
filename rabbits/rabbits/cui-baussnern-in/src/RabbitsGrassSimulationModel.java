@@ -1,4 +1,3 @@
-import epfl.lia.logist.tools.Pair;
 import uchicago.src.sim.analysis.OpenSequenceGraph;
 import uchicago.src.sim.engine.*;
 import uchicago.src.sim.gui.ColorMap;
@@ -21,22 +20,12 @@ import java.util.Random;
  */
 
 public class RabbitsGrassSimulationModel extends SimModelImpl {
-    private static final int GRIDSIZE = 20;
-    private static final int NUMINITRABBITS = 10;
-    private static final int NUMINITGRASS = 100;
-    private static final int AMOUNTGRASSENERGY = 100;
-    private static final int GRASSGROWTHRATE = 20;
-    private static final int BIRTHTHRESHOLD = 10;
-    private static final int INITRABBITENERGY = 10;
-    private static final int RANDOM_SEED = 42;
-
-    private int gridSize = GRIDSIZE;
-    private int numInitRabbits = NUMINITRABBITS;
-    private int numInitGrass = NUMINITGRASS;
-    private int amountGrassEnergy = AMOUNTGRASSENERGY;
-    private int grassGrowthRate = GRASSGROWTHRATE;
-    private int birthThreshold = BIRTHTHRESHOLD;
-    private int initRabbitEnergy = INITRABBITENERGY;
+    private int gridSize = Config.GRID_SIZE;
+    private int numInitRabbits = Config.NUM_INIT_RABBITS;
+    private int numInitGrass = Config.NUM_INIT_GRASS;
+    private int birthThreshold = Config.BIRTH_THRESHOLD;
+    private int initRabbitEnergy = Config.INIT_RABBIT_ENERGY;
+    private int grassGrowthRate = Config.GRASS_GROWTH_RATE;
 
     private Schedule schedule;
     private DisplaySurface displaySurface;
@@ -72,7 +61,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
     // }
 
     public void begin() {
-        this.rnd = new Random(RANDOM_SEED);
+        this.rnd = new Random(Config.RANDOM_SEED);
 
         buildModel();
         buildSchedule();
@@ -280,10 +269,13 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
             }
         }
 
-        var pos = possiblePositions.get(rnd.nextInt(possiblePositions.size()));
-        rabbit.setXY(pos.x, pos.y);
-
-        agents.add(rabbit);
-        space.addRabbit(rabbit);
+        if (possiblePositions.size() > 0) {
+            var pos = possiblePositions.get(rnd.nextInt(possiblePositions.size()));
+            rabbit.setXY(pos.x, pos.y);
+            agents.add(rabbit);
+            space.addRabbit(rabbit);
+        } else {
+            System.out.println("WARING: Could not place new agent.");
+        }
     }
 }
