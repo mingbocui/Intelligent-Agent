@@ -2,40 +2,48 @@ import uchicago.src.sim.gui.Drawable;
 import uchicago.src.sim.gui.SimGraphics;
 import uchicago.src.sim.space.Object2DGrid;
 
-import java.awt.Color;
+import java.awt.*;
+import java.util.ArrayList;
 import java.util.Random;
 
+import static java.lang.Math.abs;
 
-/**
- * Class that implements the simulation agent for the rabbits grass simulation.
- *
- * @author
- */
 
 public class RabbitsGrassSimulationAgent implements Drawable {
+    private final int RANDOM_SEED = 42;
 
     // position
-    private int x;
-    private int y;
-    // random move
-    private int vX;
-    private int vY;
-    //
-    private int energy;
+    private int x = 0;
+    private int y = 0;
 
-    private int idOfRabbit;
-    private int numOfRabbit = 0;
+    private int energy = 0;
+
+    private int id = 0;
+    private static int RABBIT_INIT_COUNTER = 0;
 
     private RabbitsGrassSimulationSpace space;
     private Random rnd;
 
-    // smart ideas from tutorial
-    private void setVxVy() {
-        vX = 0;
-        vY = 0;
-        // rabbit could stay and does not move
-        vX = (int) Math.floor(rnd.nextDouble() * 3) - 1;
-        vY = (int) Math.floor(rnd.nextDouble() * 3) - 1;
+    public RabbitsGrassSimulationAgent() {
+        rnd = new Random(RANDOM_SEED);
+        id = ++RABBIT_INIT_COUNTER;
+    }
+
+    public RabbitsGrassSimulationAgent(int initEnergy) {
+        this();
+        energy = initEnergy;
+    }
+
+    public RabbitsGrassSimulationAgent(int initEnergy, RabbitsGrassSimulationSpace space) {
+        this();
+        this.energy = initEnergy;
+        this.space = space;
+    }
+
+    public RabbitsGrassSimulationAgent(int initEnergy, int randomSeed) {
+        this();
+        energy = initEnergy;
+        rnd = new Random(randomSeed);
     }
 
     public void setXY(int newX, int newY) {
@@ -47,101 +55,57 @@ public class RabbitsGrassSimulationAgent implements Drawable {
         this.space = space;
     }
 
-    public void draw(SimGraphics G) { G.drawFastRoundRect(Color.green); } // colored rabbit agent with green cell;
-
-    public RabbitsGrassSimulationAgent(int initEnergy) {
-        x = 0;
-        y = 0;
-        energy = initEnergy;
-        numOfRabbit++;
-        idOfRabbit = numOfRabbit;
-        this.rnd = new Random(44);
+    public void draw(SimGraphics G) {
+        // TODO color rabbit with amount of energy?
+        G.drawFastRoundRect(Color.green);
     }
 
     public int getX() { return x; }
     public int getY() { return y; }
 
-    public int getIdOfRabbit() { return idOfRabbit; }
-
+    public int getId() { return id; }
     public int getEnergy() { return energy; }
 
     public boolean isAlive() { return energy > 1; }
 
     public void report() {
-        System.out.println(String.format("%dth rabbit, located at: (%d, %d), remaining energy: %d", idOfRabbit, x, y, energy));
+        System.out.println(String.format("%dth rabbit, located at: (%d, %d), remaining energy: %d", id, x, y, energy));
     }
 
-    public void step() { // to update status
+    public void step() {
+        Object2DGrid grid = space.getAgentSpace();
 
-        Object2DGrid grid = space.getCurrentSpace();
-
-        setVxVy();
-        if(this.vX != 0 || this.vY != 0){
-
-            int newX = (x + vX) % grid.getSizeX();
-            int newY = (y + vY) % grid.getSizeY();
-
-            if(!tryMove(newX, newY)){
-                System.out.println("This rabbit is blocked and could not make any move");
-            }
-
-            else{
-                // every step move cost 1 energy
-                this.energy -= 1;
-
-                // update new position
-                setXY(newX,newY);
-
-                // eat the grass on the grid,
-                eat(newX,newY);
-
-                // remove rabbit if its energy is zero
-                if(this.energy == 0){
-                    space.removeRabbitFromSpace(newX, newY);
-                }
-
-                //TODO Sam, implement the reproduce function
-            }
-
-        }
-
-
-    }
-
-    // to check whether the next cell is occupied
-    private boolean tryMove(int newX, int newY) {
-        if(!space.moveRabbit(x, y, newX, newY)){
-            // Done: check if the field is occupied, if that is the case try another direction
-            for(int i = 0; i < 4; i++){
-                if(reDirectIfOccupied(i)){
-                    //TODO Sam, find a way to update the newX and newY
-                    return true;
+        var possiblePositions = new ArrayList<Point>();
+        for (int i = -1; i < 2; i++) {
+            for (int j = -1; j < 2; j++) {
+                // the `+ _gs` deals with the negative case. -1 + 0 % 20 == -1 (in Java), but we want op(-1 + 0) == 19
+                // (assuming the grid size is 20). in order to achieve this we "exploit" the modulus operator
+                // x + grid-size % grid-size =(if x is lower bounded by 0)= x
+                final var _gs = space.getGridSize();
+                if ((abs(i) + abs(j)) == 1) {
+                    var _x = (i + x + _gs) % _gs;
+                    var _y = (j + y + _gs) % _gs;
+                    possiblePositions.add(new Point(_x, _y));
                 }
             }
-//            System.out.println("This rabbit is blocked and could not make any move");
-            return false;
         }
-        else
-            return space.moveRabbit(x, y, newX, newY);
-    }
 
-    // helper function
-    private boolean reDirectIfOccupied(int i){
-        boolean flag = false;
-        switch(i){
-            case 0 : flag = tryMove(x,y+1); break;
-            case 1 : flag = tryMove(x, y-1); break;
-            case 2 : flag = tryMove(x-1,y); break;
-            case 3 : flag = tryMove(x+1, y); break;
+        possiblePositions.removeIf(dir -> space.isOccupied(dir.x, dir.y));
+
+        if (possiblePositions.size() > 0) {
+            var newPosition = possiblePositions.get(rnd.nextInt(possiblePositions.size()));
+            this.setXY(newPosition.x, newPosition.y);
+            this.energy -= 1;
+        } else {
+            System.out.println(String.format("Rabbit %d could not be moved", id));
         }
-        return flag;
     }
 
-    public void eat(int x, int y){
-        Object2DGrid grassSpace = space.getCurrentSpace();
-        int amountOfGrass = (int) grassSpace.getObjectAt(x, y);
-        grassSpace.putObjectAt(x, y, new Integer(0)); // consumed all grass of the grid
-        this.energy += amountOfGrass; // rabbit will get energy from the grass;
+    public void consume(int energy) {
+        this.energy += energy;
     }
 
+    public void setEnergy(int i) {
+        this.energy = i;
+    }
 }

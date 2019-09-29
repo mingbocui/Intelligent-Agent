@@ -1,8 +1,6 @@
+import epfl.lia.logist.tools.Pair;
 import uchicago.src.sim.analysis.OpenSequenceGraph;
-import uchicago.src.sim.engine.BasicAction;
-import uchicago.src.sim.engine.Schedule;
-import uchicago.src.sim.engine.SimInit;
-import uchicago.src.sim.engine.SimModelImpl;
+import uchicago.src.sim.engine.*;
 import uchicago.src.sim.gui.ColorMap;
 import uchicago.src.sim.gui.DisplaySurface;
 import uchicago.src.sim.gui.Object2DDisplay;
@@ -11,7 +9,6 @@ import uchicago.src.sim.util.SimUtilities;
 
 import java.awt.*;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Random;
 
 /**
@@ -31,6 +28,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
     private static final int GRASSGROWTHRATE = 20;
     private static final int BIRTHTHRESHOLD = 10;
     private static final int INITRABBITENERGY = 10;
+    private static final int RANDOM_SEED = 42;
 
     private int gridSize = GRIDSIZE;
     private int numInitRabbits = NUMINITRABBITS;
@@ -44,7 +42,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
     private DisplaySurface displaySurface;
     private RabbitsGrassSimulationSpace space;
 
-    private ArrayList<RabbitsGrassSimulationAgent> rabbitsList;
+    private ArrayList<RabbitsGrassSimulationAgent> agents;
 
     // creating graph to show Energy, Rabbits, Grass, etc
     // TODO rename this... somewhat confusingly named
@@ -67,8 +65,14 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 
     }
 
+    // let's not do this... we don't know what else might be going on
+    // public RabbitsGrassSimulationModel() {
+    //     rnd = new Random(RANDOM_SEED);
+    // }
+
     public void begin() {
-        // TODO Auto-generated method stub
+        this.rnd = new Random(RANDOM_SEED);
+
         buildModel();
         buildSchedule();
         buildDisplay();
@@ -98,14 +102,13 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 
     public void setup() {
         space = null;
-        rabbitsList = new ArrayList<RabbitsGrassSimulationAgent>();
+        agents = new ArrayList<RabbitsGrassSimulationAgent>();
         schedule = new Schedule(1);
 
         if (displaySurface != null) {
             displaySurface.dispose();
         }
 
-        displaySurface = null;
         displaySurface = new DisplaySurface(this, "window 1");
         registerDisplaySurface("window 1", displaySurface);
     }
@@ -153,28 +156,31 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
     private void buildModel(){
         System.out.println("Model Building Process");
 
-        space = new RabbitsGrassSimulationSpace(this.gridSize, this.amountGrassEnergy);
+        space = new RabbitsGrassSimulationSpace(this.gridSize);
         space.spreadGrass(numInitGrass);
-        rabbitsList = new ArrayList<RabbitsGrassSimulationAgent>();
+        agents = new ArrayList<RabbitsGrassSimulationAgent>();
         for (int i = 0; i < numInitRabbits; i++) {
-            addNewRabbit();
+            addNewAgent();
         }
 
         // report the status of rabbits
-        rabbitsList.forEach(rabbit -> rabbit.report());
+        for (final var agent: agents) {
+            agent.report();
+        }
     }
 
 
     private void buildSchedule(){
         class Step extends BasicAction {
             public void execute() {
-                SimUtilities.shuffle(rabbitsList); // not sure if necessary
-                rabbitsList.forEach(a -> a.step());
+                SimUtilities.shuffle(agents);
 
-                int deadAgents = reapDeadAgents();
-                for (int i = 0; i < deadAgents; i++) {
-                    addNewRabbit();
-                }
+                // order of actions is constant
+                triggerAgentMove();
+                triggerAgentEating();
+                triggerAgentReproduction();
+                triggerAgentDeaths();
+                triggerGrassGrowth();
 
                 displaySurface.updateDisplay();
             }
@@ -186,22 +192,64 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
             }
         }
 
+
         schedule.scheduleActionBeginning(0, new Step());
         schedule.scheduleActionAtInterval(10, new CountLivingAgents());
+    }
+
+    private void triggerGrassGrowth() {
+        space.spreadGrass(this.grassGrowthRate);
+    }
+
+    private void triggerAgentDeaths() {
+        var aliveAgents = new ArrayList<RabbitsGrassSimulationAgent>();
+        for (var agent: agents) {
+            if (agent.isAlive()) {
+                aliveAgents.add(agent);
+            } else {
+                space.removeRabbitFromSpace(agent.getX(), agent.getY());
+            }
+        }
+        this.agents = aliveAgents;
+    }
+
+    private void triggerAgentReproduction() {
+        var numberOfNewAgents = 0;
+        for (var agent: agents) {
+            if (agent.getEnergy() > this.birthThreshold) {
+                agent.setEnergy(agent.getEnergy() - this.birthThreshold);
+                numberOfNewAgents++;
+            }
+        }
+
+        for (int i = 0; i < numberOfNewAgents; i++) {
+            this.addNewAgent();
+        }
+    }
+
+    private void triggerAgentMove() {
+        for (var agent: agents) {
+            agent.step();
+        }
+    }
+    private void triggerAgentEating() {
+        for (var agent: agents) {
+            agent.consume(space.harvestGrass(agent.getX(), agent.getY())); // harvestGrass can return 0
+        }
     }
 
     private void buildDisplay(){
         var colorMap = new ColorMap();
 
         colorMap.mapColor(0, Color.white);
-        colorMap.mapColor(1, Color.green);
-
-        // TODO add more colors? how many? how are they determined?
+        for (int i = 1; i < 16; i++) {
+            colorMap.mapColor(i, new Color((int)(i * 8 + 127), 0, 0));
+        }
 
         var displayGrass = new Value2DDisplay(space.getGrassSpace(), colorMap);
-        var displayAgents = new Object2DDisplay(space.getRabbitSpace());
+        var displayAgents = new Object2DDisplay(space.getAgentSpace());
 
-        displayAgents.setObjectList(rabbitsList);
+        displayAgents.setObjectList(agents);
         displaySurface.addDisplayable(displayGrass, "Grass");
         displaySurface.addDisplayable(displayAgents, "Agents");
     }
@@ -209,7 +257,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
     private int countLivingAgents() {
         var count = 0;
         // TODO replace this with a map and sum... uag fucking java
-        for(final var agent: rabbitsList) {
+        for(final var agent: agents) {
             if (agent.isAlive()) {
                 count++;
             }
@@ -217,28 +265,22 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
         return count;
     }
 
-    private int reapDeadAgents() {
-        int oldCount = rabbitsList.size();
-        var newList = new ArrayList<RabbitsGrassSimulationAgent>();
-        // TODO maybe use ArrayList.removeIf()
-        for (final var agent: rabbitsList) {
-            if (!agent.isAlive()) {
-                var x = agent.getX();
-                var y = agent.getY();
-                space.removeRabbitFromSpace(x, y);
-                // TODO do something else here with the rabbit?
-            } else {
-                newList.add(agent);
+    private void addNewAgent(){
+        var rabbit = new RabbitsGrassSimulationAgent(initRabbitEnergy, this.space);
+        // TODO get a random place
+        var possiblePositions = new ArrayList<Point>();
+        for (int i = 0; i < gridSize; i++) {
+            for (int j = 0; j < gridSize; j++) {
+                if (!space.isOccupied(i, j)) {
+                    possiblePositions.add(new Point(i, j));
+                }
             }
-        };
+        }
 
-        this.rabbitsList = newList;
-        return oldCount - this.rabbitsList.size();
-    }
+        var pos = possiblePositions.get(rnd.nextInt(possiblePositions.size()));
+        rabbit.setXY(pos.x, pos.y);
 
-    private void addNewRabbit(){
-        RabbitsGrassSimulationAgent rabbit = new RabbitsGrassSimulationAgent(initRabbitEnergy);
-        rabbitsList.add(rabbit);
+        agents.add(rabbit);
         space.addRabbit(rabbit);
     }
 }
