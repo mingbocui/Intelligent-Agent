@@ -4,8 +4,8 @@
     <output url="file://$MODULE_DIR$/../out/production/cui-baussnern-in" />
     <output-test url="file://$MODULE_DIR$/../out/test/cui-baussnern-in" />
     <exclude-output />
-    <content url="file://$MODULE_DIR$/rabbits/lastname1-lastname2-in">
-      <sourceFolder url="file://$MODULE_DIR$/rabbits/lastname1-lastname2-in/src" isTestSource="false" />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/rabbits/cui-baussnern-in/src" isTestSource="false" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
