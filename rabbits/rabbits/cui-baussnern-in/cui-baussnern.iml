@@ -75,7 +75,9 @@
         <CLASSES>
           <root url="jar://$MODULE_DIR$/../lib/repast.jar!/" />
         </CLASSES>
-        <JAVADOC />
+        <JAVADOC>
+          <root url="jar://$MODULE_DIR$/../lib/repast_javadoc.zip!/api" />
+        </JAVADOC>
         <SOURCES />
       </library>
     </orderEntry>

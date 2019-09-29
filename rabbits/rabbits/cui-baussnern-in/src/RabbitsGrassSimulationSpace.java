@@ -9,13 +9,14 @@ import java.util.Random;
  */
 
 public class RabbitsGrassSimulationSpace {
+    private int gridSize;
     private int grassEnergy;
     private Object2DGrid grassSpace;
     private Object2DGrid rabbitSpace;
-
     private Random rnd;
 
     public RabbitsGrassSimulationSpace(int gridSize, int grassEnergy) {
+        this.gridSize = gridSize;
         this.grassSpace = new Object2DGrid(gridSize, gridSize);
         this.rabbitSpace = new Object2DGrid(gridSize, gridSize);
         this.grassEnergy = grassEnergy;
@@ -100,6 +101,16 @@ public class RabbitsGrassSimulationSpace {
         }
     }
 
+    public int harvestGrass(int x, int y) {
+        if (grassSpace.getObjectAt(x,y) == null) {
+            return 0;
+        } else {
+            var harvest = ((Integer)grassSpace.getObjectAt(x,y)).intValue();
+            grassSpace.putObjectAt(x, y, new Integer(0));
+            return harvest;
+        }
+    }
+
     // get the amount of grass at specific position
     public int getGrassAmountAt(int x, int y){
         if(grassSpace.getObjectAt(x,y) == null) return 0;
@@ -107,8 +118,11 @@ public class RabbitsGrassSimulationSpace {
     }
 
 
+    public int getGridSize() {
+        return gridSize;
+    }
 
-
-
-
+    public void setGridSize(int gridSize) {
+        this.gridSize = gridSize;
+    }
 }
