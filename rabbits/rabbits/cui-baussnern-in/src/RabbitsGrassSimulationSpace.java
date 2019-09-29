@@ -4,26 +4,55 @@ import java.util.Random;
 
 /**
  * Class that implements the simulation space of the rabbits grass simulation.
+ * the grassSpace objects are Integer
  *
  * @author
  */
 
 public class RabbitsGrassSimulationSpace {
+    private class Grass extends Number {
+        public int value = 0;
+        public void grow(int amount) {
+            value += amount;
+        }
+
+        public void grow() {
+            this.grow(1);
+        }
+
+        public int harvest() {
+            var t = value;
+            value = 0;
+            return t;
+        }
+
+        @Override
+        public int intValue() { return value; }
+
+        @Override
+        public long longValue() { return value; }
+
+        @Override
+        public float floatValue() { return value; }
+
+        @Override
+        public double doubleValue() { return value; }
+    }
+
     private int gridSize;
-    private int grassEnergy;
     private Object2DGrid grassSpace;
     private Object2DGrid rabbitSpace;
     private Random rnd;
 
-    public RabbitsGrassSimulationSpace(int gridSize, int grassEnergy) {
+    public RabbitsGrassSimulationSpace(int gridSize) {
         this.gridSize = gridSize;
-        this.grassSpace = new Object2DGrid(gridSize, gridSize);
         this.rabbitSpace = new Object2DGrid(gridSize, gridSize);
-        this.grassEnergy = grassEnergy;
         this.rnd = new Random(42);
+
+        this.grassSpace = new Object2DGrid(gridSize, gridSize);
         for (int i = 0; i < gridSize; i++) {
             for (int j = 0; j < gridSize; j++) {
-                this.grassSpace.putObjectAt(i, j, new Integer(0));
+                this.grassSpace.putObjectAt(i, j, new Grass());
             }
         }
     }
@@ -31,92 +60,39 @@ public class RabbitsGrassSimulationSpace {
     public Object2DGrid getGrassSpace() {
         return grassSpace;
     }
-
     public void setGrassSpace(Object2DGrid grassSpace) {
         this.grassSpace = grassSpace;
     }
+    public void setRabbitSpace(Object2DGrid rabbitSpace) { this.rabbitSpace = rabbitSpace; }
+    public Object2DGrid getAgentSpace() { return this.rabbitSpace; }
 
-    public Object2DGrid getRabbitSpace() {
-        return rabbitSpace;
-    }
-
-    public void setRabbitSpace(Object2DGrid rabbitSpace) {
-        this.rabbitSpace = rabbitSpace;
-    }
-
-
-    // spread certain amount of grass
     public void spreadGrass(int grassAmount){
-        if (grassAmount < 0) {
-            throw new IllegalArgumentException("grassAmount must be non-negative");
+        for (int i = 0; i < grassAmount; i++) {
+            var x = rnd.nextInt(gridSize);
+            var y = rnd.nextInt(gridSize);
+            ((Grass)grassSpace.getObjectAt(x, y)).grow();
         }
-        while (grassAmount > 0) {
-
-            int x = (int)(rnd.nextDouble()*(this.rabbitSpace.getSizeX()));
-            int y = (int)(rnd.nextDouble()*(this.rabbitSpace.getSizeY()));
-            int originalGrassAmount = getGrassAmountAt(x, y);
-            grassSpace.putObjectAt(x, y, originalGrassAmount + 1);
-            grassAmount--;
-        }
-    }
-
-    public Object2DGrid getCurrentSpace() {
-        return this.rabbitSpace;
     }
 
     public boolean isOccupied(int x, int y){
         return rabbitSpace.getObjectAt(x, y) != null;
     }
 
-    // add rabbit to the rabbit space, but just need add one agent for every call of this function?
     public void addRabbit(RabbitsGrassSimulationAgent rabbit){
-        boolean flag = false;
-        while(!flag){
-            // random position
-            int x = (int)(rnd.nextDouble()*(rabbitSpace.getSizeX()));
-            int y = (int)(rnd.nextDouble()*(rabbitSpace.getSizeY()));
-            if(!isOccupied(x, y)){
-                rabbitSpace.putObjectAt(x,y,rabbit);
-                rabbit.setXY(x,y);
-                // rabbit's living space
-                rabbit.setSpace(this);
-                flag = true;
-            }
-        }
+        rabbitSpace.putObjectAt(rabbit.getX(), rabbit.getY(), rabbit);
     }
 
     public void removeRabbitFromSpace(int x, int y){
         rabbitSpace.putObjectAt(x,y,null);
     }
 
-    public boolean moveRabbit(int xPre, int yPre, int xPost, int yPost){
-        if(isOccupied(xPost, yPost)) return false;
-        else{
-            // TODO maybe check that post-vars are in bound
-            RabbitsGrassSimulationAgent rabbit = (RabbitsGrassSimulationAgent) rabbitSpace.getObjectAt(xPre,yPre);
-            removeRabbitFromSpace(xPre,yPre);
-            rabbit.setXY(xPost,yPost);
-            rabbitSpace.putObjectAt(xPost,yPost,rabbit);
-            return true;
-        }
-    }
-
     public int harvestGrass(int x, int y) {
-        if (grassSpace.getObjectAt(x,y) == null) {
-            return 0;
-        } else {
-            var harvest = ((Integer)grassSpace.getObjectAt(x,y)).intValue();
-            grassSpace.putObjectAt(x, y, new Integer(0));
-            return harvest;
-        }
+        return ((Grass)grassSpace.getObjectAt(x,y)).harvest();
     }
 
-    // get the amount of grass at specific position
     public int getGrassAmountAt(int x, int y){
-        if(grassSpace.getObjectAt(x,y) == null) return 0;
-        else return ((Integer)grassSpace.getObjectAt(x,y)).intValue();
+        return ((Grass)grassSpace.getObjectAt(x,y)).value;
     }
-
 
     public int getGridSize() {
         return gridSize;

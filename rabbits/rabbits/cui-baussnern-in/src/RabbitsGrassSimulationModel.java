@@ -1,3 +1,4 @@
+import epfl.lia.logist.tools.Pair;
 import uchicago.src.sim.analysis.OpenSequenceGraph;
 import uchicago.src.sim.engine.*;
 import uchicago.src.sim.gui.ColorMap;
@@ -27,6 +28,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
     private static final int GRASSGROWTHRATE = 20;
     private static final int BIRTHTHRESHOLD = 10;
     private static final int INITRABBITENERGY = 10;
+    private static final int RANDOM_SEED = 42;
 
     private int gridSize = GRIDSIZE;
     private int numInitRabbits = NUMINITRABBITS;
@@ -63,8 +65,14 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 
     }
 
+    // let's not do this... we don't know what else might be going on
+    // public RabbitsGrassSimulationModel() {
+    //     rnd = new Random(RANDOM_SEED);
+    // }
+
     public void begin() {
-        // TODO Auto-generated method stub
+        this.rnd = new Random(RANDOM_SEED);
+
         buildModel();
         buildSchedule();
         buildDisplay();
@@ -101,7 +109,6 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
             displaySurface.dispose();
         }
 
-        displaySurface = null;
         displaySurface = new DisplaySurface(this, "window 1");
         registerDisplaySurface("window 1", displaySurface);
     }
@@ -149,7 +156,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
     private void buildModel(){
         System.out.println("Model Building Process");
 
-        space = new RabbitsGrassSimulationSpace(this.gridSize, this.amountGrassEnergy);
+        space = new RabbitsGrassSimulationSpace(this.gridSize);
         space.spreadGrass(numInitGrass);
         agents = new ArrayList<RabbitsGrassSimulationAgent>();
         for (int i = 0; i < numInitRabbits; i++) {
@@ -166,12 +173,14 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
     private void buildSchedule(){
         class Step extends BasicAction {
             public void execute() {
-                SimUtilities.shuffle(agents); // not sure if necessary
+                SimUtilities.shuffle(agents);
+
                 // order of actions is constant
                 triggerAgentMove();
                 triggerAgentEating();
                 triggerAgentReproduction();
                 triggerAgentDeaths();
+                triggerGrassGrowth();
 
                 displaySurface.updateDisplay();
             }
@@ -188,6 +197,10 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
         schedule.scheduleActionAtInterval(10, new CountLivingAgents());
     }
 
+    private void triggerGrassGrowth() {
+        space.spreadGrass(this.grassGrowthRate);
+    }
+
     private void triggerAgentDeaths() {
         var aliveAgents = new ArrayList<RabbitsGrassSimulationAgent>();
         for (var agent: agents) {
@@ -201,11 +214,16 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
     }
 
     private void triggerAgentReproduction() {
+        var numberOfNewAgents = 0;
         for (var agent: agents) {
             if (agent.getEnergy() > this.birthThreshold) {
                 agent.setEnergy(agent.getEnergy() - this.birthThreshold);
-                this.addNewAgent();
+                numberOfNewAgents++;
             }
+        }
+
+        for (int i = 0; i < numberOfNewAgents; i++) {
+            this.addNewAgent();
         }
     }
 
@@ -224,12 +242,12 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
         var colorMap = new ColorMap();
 
         colorMap.mapColor(0, Color.white);
-        colorMap.mapColor(1, Color.green);
-
-        // TODO add more colors? how many? how are they determined?
+        for (int i = 1; i < 16; i++) {
+            colorMap.mapColor(i, new Color((int)(i * 8 + 127), 0, 0));
+        }
 
         var displayGrass = new Value2DDisplay(space.getGrassSpace(), colorMap);
-        var displayAgents = new Object2DDisplay(space.getRabbitSpace());
+        var displayAgents = new Object2DDisplay(space.getAgentSpace());
 
         displayAgents.setObjectList(agents);
         displaySurface.addDisplayable(displayGrass, "Grass");
@@ -249,6 +267,19 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 
     private void addNewAgent(){
         var rabbit = new RabbitsGrassSimulationAgent(initRabbitEnergy, this.space);
+        // TODO get a random place
+        var possiblePositions = new ArrayList<Point>();
+        for (int i = 0; i < gridSize; i++) {
+            for (int j = 0; j < gridSize; j++) {
+                if (!space.isOccupied(i, j)) {
+                    possiblePositions.add(new Point(i, j));
+                }
+            }
+        }
+
+        var pos = possiblePositions.get(rnd.nextInt(possiblePositions.size()));
+        rabbit.setXY(pos.x, pos.y);
+
         agents.add(rabbit);
         space.addRabbit(rabbit);
     }
