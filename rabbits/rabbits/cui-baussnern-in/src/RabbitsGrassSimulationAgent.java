@@ -73,7 +73,11 @@ public class RabbitsGrassSimulationAgent implements Drawable {
     }
 
     public void step() {
-        Object2DGrid grid = space.getAgentSpace();
+        // This would be much smoother, if I would know how to get the positions of the null-elements...
+        // var neighborhood = space.getAgentSpace().getVonNeumannNeighbors(x, y, True);
+        // neighborhood.removeIf(a -> a != null);
+        // var el = neighborhood.get(rnd.nextInt(neighborhood.size()));
+        // ...
 
         var possiblePositions = new ArrayList<Point>();
         for (int i = -1; i < 2; i++) {
@@ -82,7 +86,7 @@ public class RabbitsGrassSimulationAgent implements Drawable {
                 // (assuming the grid size is 20). in order to achieve this we "exploit" the modulus operator
                 // x + grid-size % grid-size =(if x is lower bounded by 0)= x
                 final var _gs = space.getGridSize();
-                if ((abs(i) + abs(j)) == 1) {
+                if ((abs(i) + abs(j)) == 1) { // since we can only move
                     var _x = (i + x + _gs) % _gs;
                     var _y = (j + y + _gs) % _gs;
                     possiblePositions.add(new Point(_x, _y));

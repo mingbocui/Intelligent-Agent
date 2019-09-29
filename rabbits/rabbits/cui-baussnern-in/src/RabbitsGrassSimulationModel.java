@@ -51,6 +51,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
     private OpenSequenceGraph amountOfGrass; //amountOfGrass
 
     private Random rnd;
+    private Object2DDisplay displayAgents;
 
     public static void main(String[] args) {
         System.out.println("Rabbit skeleton");
@@ -182,6 +183,8 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
                 triggerAgentDeaths();
                 triggerGrassGrowth();
 
+                displayAgents.setObjectList(agents); // somehow they get copied or what???
+
                 displaySurface.updateDisplay();
             }
         }
@@ -247,7 +250,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
         }
 
         var displayGrass = new Value2DDisplay(space.getGrassSpace(), colorMap);
-        var displayAgents = new Object2DDisplay(space.getAgentSpace());
+        displayAgents = new Object2DDisplay(space.getAgentSpace());
 
         displayAgents.setObjectList(agents);
         displaySurface.addDisplayable(displayGrass, "Grass");
