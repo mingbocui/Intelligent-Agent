@@ -50,7 +50,7 @@ public class RabbitsGrassSimulationSpace {
             throw new IllegalArgumentException("grassAmount must be non-negative");
         }
         while (grassAmount > 0) {
-            // TODO use a real random engine
+
             int x = (int)(rnd.nextDouble()*(this.rabbitSpace.getSizeX()));
             int y = (int)(rnd.nextDouble()*(this.rabbitSpace.getSizeY()));
             int originalGrassAmount = getGrassAmountAt(x, y);

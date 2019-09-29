@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module type="JAVA_MODULE" version="4">
   <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_12">
-    <output url="file://$MODULE_DIR$/../out/production/lastname1-lastname2-in" />
-    <output-test url="file://$MODULE_DIR$/../out/test/lastname1-lastname2-in" />
+    <output url="file://$MODULE_DIR$/../out/production/cui-baussnern-in" />
+    <output-test url="file://$MODULE_DIR$/../out/test/cui-baussnern-in" />
     <exclude-output />
     <content url="file://$MODULE_DIR$/rabbits/lastname1-lastname2-in">
       <sourceFolder url="file://$MODULE_DIR$/rabbits/lastname1-lastname2-in/src" isTestSource="false" />
