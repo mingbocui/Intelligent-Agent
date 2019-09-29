@@ -67,12 +67,16 @@ public class RabbitsGrassSimulationAgent implements Drawable {
     public int getEnergy() {
         return energy;
     }
+    public boolean isAlive() { return energy > 1; }
 
     public void report() {
         System.out.println(String.format("%dth rabbit, located at: (%d, %d), remaining energy: %d", idOfRabbit, x, y, energy));
     }
 
     public void step() { // to update status
+        // TODO check if the field is occupied, if that is the case try another direction
+        // TODO pick up grass if present
+        // TODO remove penalty for moving etc...
         setVxVy();
         int newX = x + vX;
         int newY = y + vY;
