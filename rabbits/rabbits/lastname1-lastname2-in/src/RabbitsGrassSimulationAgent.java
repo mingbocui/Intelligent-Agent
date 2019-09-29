@@ -69,8 +69,7 @@ public class RabbitsGrassSimulationAgent implements Drawable {
     }
 
     public void report() {
-        System.out.print(getIdOfRabbit() + "th rabbit" +
-                "located at" + "(" + x + "," + y + "), still left energy of" + getEnergy());
+        System.out.println(String.format("%dth rabbit, located at: (%d, %d), remaining energy: %d", idOfRabbit, x, y, energy));
     }
 
     public void step() { // to update status

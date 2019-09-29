@@ -33,7 +33,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
     private int initRabbitEnergy = INITRABBITENERGY;
 
     private Schedule schedule;
-    private DisplaySurface disSurf;
+    private DisplaySurface displaySurface;
     private RabbitsGrassSimulationSpace space;
 
     private ArrayList<RabbitsGrassSimulationAgent> rabbitsList;
@@ -63,7 +63,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
         buildModel();
         buildSchedule();
         buildDisplay();
-        disSurf.display();
+        displaySurface.display();
         numOfRabbits.display();
         amountOfGrass.display();
         sumEnergyOfRabbits.display();
@@ -137,15 +137,13 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 
         space = new RabbitsGrassSimulationSpace(this.gridSize, this.amountGrassEnergy);
         space.spreadGrass(numInitGrass);
-        for(int i = 0; i < numInitRabbits; i++){
+        rabbitsList = new ArrayList<RabbitsGrassSimulationAgent>();
+        for (int i = 0; i < numInitRabbits; i++) {
             addNewRabbit();
         }
 
         // report the status of rabbits
-        for(int i = 0; i < rabbitsList.size(); i++){
-            RabbitsGrassSimulationAgent rabbit = (RabbitsGrassSimulationAgent) rabbitsList.get(i);
-            rabbit.report();
-        }
+        rabbitsList.forEach(rabbit -> rabbit.report());
     }
 
 
