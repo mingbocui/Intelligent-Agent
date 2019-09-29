@@ -45,10 +45,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
     private OpenSequenceGraph amountOfGrass;
 
 
-
-
     public static void main(String[] args) {
-
         System.out.println("Rabbit skeleton");
 
         SimInit init = new SimInit();
@@ -138,9 +135,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
     private void buildModel(){
         System.out.println("Model Building Process");
 
-        //TODO DEBUG
-
-        space = new RabbitsGrassSimulationSpace();
+        space = new RabbitsGrassSimulationSpace(this.gridSize, this.amountGrassEnergy);
         space.spreadGrass(numInitGrass);
         for(int i = 0; i < numInitRabbits; i++){
             addNewRabbit();

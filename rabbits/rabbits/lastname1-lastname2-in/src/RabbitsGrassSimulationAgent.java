@@ -50,10 +50,10 @@ public class RabbitsGrassSimulationAgent implements Drawable {
         G.drawFastRoundRect(Color.green); // not sure
     }
 
-    public RabbitsGrassSimulationAgent(int iniEnery) {
+    public RabbitsGrassSimulationAgent(int initEnergy) {
         x = 0;
         y = 0;
-        energy = iniEnery;
+        energy = initEnergy;
         numOfRabbit++;
         idOfRabbit = numOfRabbit;
     }
