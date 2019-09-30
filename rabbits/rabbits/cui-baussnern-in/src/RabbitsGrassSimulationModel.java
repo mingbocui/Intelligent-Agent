@@ -82,6 +82,24 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
         return params;
     }
 
+
+// stupid me, have reimplemented some stuff
+//    class rabbitsCounting extends BasicAction{
+//        @Override
+//        public void execute(){
+//            countLivingRabbits();
+//        }
+//    }
+//
+//    private void countLivingRabbits(){
+//        int numRabbits = 0;
+//        for(int i = 0; i < agents.size();i++){
+//            RabbitsGrassSimulationAgent rabbit = agents.get(i);
+//            if(rabbit.getEnergy() > 0){ numRabbits++; }
+//            System.out.println(String.format("There are %d rabbits are alive.", numRabbits));
+//        }
+//    }
+
     public Schedule getSchedule() {
         return schedule;
     }
@@ -102,6 +120,20 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 
         displaySurface = new DisplaySurface(this, "window 1");
         registerDisplaySurface("window 1", displaySurface);
+
+
+        if(numOfRabbits != null) numOfRabbits.display();
+        numOfRabbits = new OpenSequenceGraph("Total number of rabbits", this);
+
+        if(sumEnergyOfRabbits != null) sumEnergyOfRabbits.dispose();
+        sumEnergyOfRabbits = new OpenSequenceGraph("Total energy consisted in all rabbits", this);
+
+        if(amountOfGrass != null) amountOfGrass.display();
+        amountOfGrass = new OpenSequenceGraph("Total amount of grass", this);
+
+        this.registerMediaProducer("plot", amountOfGrass);
+        this.registerMediaProducer("plot", sumEnergyOfRabbits);
+        this.registerMediaProducer("plot", numOfRabbits);
     }
 
     public int getGridSize() {
@@ -279,4 +311,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
             System.out.println("WARING: Could not place new agent.");
         }
     }
+
+
+
 }
