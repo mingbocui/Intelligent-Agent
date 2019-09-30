@@ -1,4 +1,6 @@
+import uchicago.src.sim.analysis.DataSource;
 import uchicago.src.sim.analysis.OpenSequenceGraph;
+import uchicago.src.sim.analysis.Sequence;
 import uchicago.src.sim.engine.*;
 import uchicago.src.sim.gui.ColorMap;
 import uchicago.src.sim.gui.DisplaySurface;
@@ -7,8 +9,11 @@ import uchicago.src.sim.gui.Value2DDisplay;
 import uchicago.src.sim.util.SimUtilities;
 
 import java.awt.*;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 /**
  * Class that implements the simulation model for the rabbits grass
@@ -33,12 +38,40 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 
     private ArrayList<RabbitsGrassSimulationAgent> agents;
 
-    private OpenSequenceGraph graphSumEnergyOfRabbits;
-    private OpenSequenceGraph graphNumOfRabbits;
-    private OpenSequenceGraph graphAmountOfGrass;
+    private OpenSequenceGraph reportingGraph;
 
     private Random rnd;
     private Object2DDisplay displayAgents;
+
+    class AliveAgents implements DataSource, Sequence {
+        public Object execute() {
+            return new Double(getSValue());
+        }
+
+        public double getSValue() {
+            return countLivingAgents();
+        }
+    }
+
+    class EnergyAgents implements DataSource, Sequence {
+        public Object execute() {
+            return new Double(getSValue());
+        }
+
+        public double getSValue() {
+            return agents.stream().mapToInt(a -> a.getEnergy()).sum();
+        }
+    }
+
+    class GrassAmount implements DataSource, Sequence {
+        public Object execute() {
+            return new Double(getSValue());
+        }
+
+        public double getSValue() {
+            return space.getTotalGrassAmount();
+        }
+    }
 
     public static void main(String[] args) {
         System.out.println("Rabbit skeleton");
@@ -67,9 +100,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 
         displaySurface.display();
 
-        graphNumOfRabbits.display();
-        graphAmountOfGrass.display();
-        graphSumEnergyOfRabbits.display();
+        reportingGraph.display();
     }
 
     public String[] getInitParam() {
@@ -120,6 +151,9 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
         this.birthThreshold = birthThreshold;
     }
 
+    public void setInitRabbitEnergy(int initRabbitEnergy) { this.initRabbitEnergy = initRabbitEnergy; }
+    public int getInitRabbitEnergy() { return this.initRabbitEnergy; }
+
     @Override
     public String getName() {
         return "simple rabbit model";
@@ -137,19 +171,12 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
         displaySurface = new DisplaySurface(this, "window 1");
         registerDisplaySurface("window 1", displaySurface);
 
+        if (reportingGraph != null) {
+            reportingGraph.dispose();
+        }
+        reportingGraph = new OpenSequenceGraph("Reporting Graph", this);
 
-        if(graphNumOfRabbits != null) graphNumOfRabbits.display();
-        graphNumOfRabbits = new OpenSequenceGraph("Total number of rabbits", this);
-
-        if(graphSumEnergyOfRabbits != null) graphSumEnergyOfRabbits.dispose();
-        graphSumEnergyOfRabbits = new OpenSequenceGraph("Total energy consisted in all rabbits", this);
-
-        if(graphAmountOfGrass != null) graphAmountOfGrass.display();
-        graphAmountOfGrass = new OpenSequenceGraph("Total amount of grass", this);
-
-        this.registerMediaProducer("plot", graphAmountOfGrass);
-        this.registerMediaProducer("plot", graphSumEnergyOfRabbits);
-        this.registerMediaProducer("plot", graphNumOfRabbits);
+        this.registerMediaProducer("Plot", reportingGraph);
     }
 
     private void buildModel(){
@@ -186,15 +213,36 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
             }
         }
 
-        class CountLivingAgents extends BasicAction {
+        class Reporting extends BasicAction {
             public void execute() {
+                reportingGraph.step();
+
                 System.out.println(String.format("We have %d alive agents (rabbits)", countLivingAgents()));
             }
         }
 
-
         schedule.scheduleActionBeginning(0, new Step());
-        schedule.scheduleActionAtInterval(10, new CountLivingAgents());
+        schedule.scheduleActionBeginning(0, new Reporting()); // should be done after the `Step` action, not just randomly
+    }
+
+    private void buildDisplay(){
+        var grassColorMap = new ColorMap();
+
+        grassColorMap.mapColor(0, Color.white);
+        for (int i = 1; i < 16; i++) {
+            grassColorMap.mapColor(i, new Color(i * 8 + 127, 0, 0));
+        }
+
+        var displayGrass = new Value2DDisplay(space.getGrassSpace(), grassColorMap);
+        displayAgents = new Object2DDisplay(space.getAgentSpace());
+
+        displayAgents.setObjectList(agents);
+        displaySurface.addDisplayable(displayGrass, "Grass");
+        displaySurface.addDisplayable(displayAgents, "Agents");
+
+        reportingGraph.addSequence("num of rabbits", new AliveAgents());
+        reportingGraph.addSequence("total rabbit energy", new EnergyAgents());
+        reportingGraph.addSequence("amount of grass", new GrassAmount());
     }
 
     private void triggerGrassGrowth() {
@@ -236,22 +284,6 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
         for (var agent: agents) {
             agent.consume(space.harvestGrass(agent.getX(), agent.getY())); // harvestGrass can return 0
         }
-    }
-
-    private void buildDisplay(){
-        var grassColorMap = new ColorMap();
-
-        grassColorMap.mapColor(0, Color.white);
-        for (int i = 1; i < 16; i++) {
-            grassColorMap.mapColor(i, new Color((int)(i * 8 + 127), 0, 0));
-        }
-
-        var displayGrass = new Value2DDisplay(space.getGrassSpace(), grassColorMap);
-        displayAgents = new Object2DDisplay(space.getAgentSpace());
-
-        displayAgents.setObjectList(agents);
-        displaySurface.addDisplayable(displayGrass, "Grass");
-        displaySurface.addDisplayable(displayAgents, "Agents");
     }
 
     private int countLivingAgents() {

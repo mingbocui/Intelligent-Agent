@@ -1,3 +1,4 @@
+import org.apache.commons.math.util.MathUtils;
 import uchicago.src.sim.space.Object2DGrid;
 
 import java.util.Random;
@@ -10,6 +11,16 @@ import java.util.Random;
  */
 
 public class RabbitsGrassSimulationSpace {
+    public int getTotalGrassAmount() {
+        var count = 0;
+        for (int i = 0; i < gridSize; i++) {
+            for (int j = 0; j < gridSize; j++) {
+                count += ((Grass)grassSpace.getObjectAt(i, j)).value;
+            }
+        }
+        return count;
+    }
+
     private class Grass extends Number {
         public int value = 0;
         public void grow(int amount) {
