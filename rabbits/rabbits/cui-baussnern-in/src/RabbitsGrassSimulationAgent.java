@@ -10,8 +10,6 @@ import static java.lang.Math.abs;
 
 
 public class RabbitsGrassSimulationAgent implements Drawable {
-    private final int RANDOM_SEED = 42;
-
     // position
     private int x = 0;
     private int y = 0;
@@ -25,7 +23,7 @@ public class RabbitsGrassSimulationAgent implements Drawable {
     private Random rnd;
 
     public RabbitsGrassSimulationAgent() {
-        rnd = new Random(RANDOM_SEED);
+        rnd = new Random(Config.RANDOM_SEED);
         id = ++RABBIT_INIT_COUNTER;
     }
 
