@@ -33,11 +33,9 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 
     private ArrayList<RabbitsGrassSimulationAgent> agents;
 
-    // creating graph to show Energy, Rabbits, Grass, etc
-    // TODO rename this... somewhat confusingly named
-    private OpenSequenceGraph sumEnergyOfRabbits; //sumEnergyOfRabbits
-    private OpenSequenceGraph numOfRabbits; //numOfRabbits
-    private OpenSequenceGraph amountOfGrass; //amountOfGrass
+    private OpenSequenceGraph graphSumEnergyOfRabbits;
+    private OpenSequenceGraph graphNumOfRabbits;
+    private OpenSequenceGraph graphAmountOfGrass;
 
     private Random rnd;
     private Object2DDisplay displayAgents;
@@ -66,11 +64,12 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
         buildModel();
         buildSchedule();
         buildDisplay();
+
         displaySurface.display();
-        // TODO register these the same way as the displaySurface, check `this.setup()`
-        // numOfRabbits.display();
-        // amountOfGrass.display();
-        // sumEnergyOfRabbits.display();
+
+        graphNumOfRabbits.display();
+        graphAmountOfGrass.display();
+        graphSumEnergyOfRabbits.display();
     }
 
     public String[] getInitParam() {
@@ -82,26 +81,43 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
         return params;
     }
 
-
-// stupid me, have reimplemented some stuff
-//    class rabbitsCounting extends BasicAction{
-//        @Override
-//        public void execute(){
-//            countLivingRabbits();
-//        }
-//    }
-//
-//    private void countLivingRabbits(){
-//        int numRabbits = 0;
-//        for(int i = 0; i < agents.size();i++){
-//            RabbitsGrassSimulationAgent rabbit = agents.get(i);
-//            if(rabbit.getEnergy() > 0){ numRabbits++; }
-//            System.out.println(String.format("There are %d rabbits are alive.", numRabbits));
-//        }
-//    }
-
     public Schedule getSchedule() {
         return schedule;
+    }
+
+    public int getGridSize() {
+        return gridSize;
+    }
+    public void setGridSize(int gridSize) {
+        this.gridSize = gridSize;
+    }
+
+    public int getGrassGrowthRate() {
+        return grassGrowthRate;
+    }
+    public void setGrassGrowthRate(int grassGrowthRate) {
+        this.grassGrowthRate = grassGrowthRate;
+    }
+
+    public int getNumInitRabbits() {
+        return numInitRabbits;
+    }
+    public void setNumInitRabbits(int numInitRabbits) {
+        this.numInitRabbits = numInitRabbits;
+    }
+
+    public int getNumInitGrass() {
+        return numInitGrass;
+    }
+    public void setNumInitGrass(int numInitGrass) {
+        this.numInitGrass = numInitGrass;
+    }
+
+    public int getBirthThreshold() {
+        return birthThreshold;
+    }
+    public void setBirthThreshold(int birthThreshold) {
+        this.birthThreshold = birthThreshold;
     }
 
     @Override
@@ -122,58 +138,18 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
         registerDisplaySurface("window 1", displaySurface);
 
 
-        if(numOfRabbits != null) numOfRabbits.display();
-        numOfRabbits = new OpenSequenceGraph("Total number of rabbits", this);
+        if(graphNumOfRabbits != null) graphNumOfRabbits.display();
+        graphNumOfRabbits = new OpenSequenceGraph("Total number of rabbits", this);
 
-        if(sumEnergyOfRabbits != null) sumEnergyOfRabbits.dispose();
-        sumEnergyOfRabbits = new OpenSequenceGraph("Total energy consisted in all rabbits", this);
+        if(graphSumEnergyOfRabbits != null) graphSumEnergyOfRabbits.dispose();
+        graphSumEnergyOfRabbits = new OpenSequenceGraph("Total energy consisted in all rabbits", this);
 
-        if(amountOfGrass != null) amountOfGrass.display();
-        amountOfGrass = new OpenSequenceGraph("Total amount of grass", this);
+        if(graphAmountOfGrass != null) graphAmountOfGrass.display();
+        graphAmountOfGrass = new OpenSequenceGraph("Total amount of grass", this);
 
-        this.registerMediaProducer("plot", amountOfGrass);
-        this.registerMediaProducer("plot", sumEnergyOfRabbits);
-        this.registerMediaProducer("plot", numOfRabbits);
-    }
-
-    public int getGridSize() {
-        return gridSize;
-    }
-
-    public void setGridSize(int gridSize) {
-        this.gridSize = gridSize;
-    }
-
-    public int getGrassGrowthRate() {
-        return grassGrowthRate;
-    }
-
-    public void setGrassGrowthRate(int grassGrowthRate) {
-        this.grassGrowthRate = grassGrowthRate;
-    }
-
-    public int getNumInitRabbits() {
-        return numInitRabbits;
-    }
-
-    public void setNumInitRabbits(int numInitRabbits) {
-        this.numInitRabbits = numInitRabbits;
-    }
-
-    public int getNumInitGrass() {
-        return numInitGrass;
-    }
-
-    public void setNumInitGrass(int numInitGrass) {
-        this.numInitGrass = numInitGrass;
-    }
-
-    public int getBirthThreshold() {
-        return birthThreshold;
-    }
-
-    public void setBirthThreshold(int birthThreshold) {
-        this.birthThreshold = birthThreshold;
+        this.registerMediaProducer("plot", graphAmountOfGrass);
+        this.registerMediaProducer("plot", graphSumEnergyOfRabbits);
+        this.registerMediaProducer("plot", graphNumOfRabbits);
     }
 
     private void buildModel(){
@@ -191,7 +167,6 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
             agent.report();
         }
     }
-
 
     private void buildSchedule(){
         class Step extends BasicAction {
@@ -264,14 +239,14 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
     }
 
     private void buildDisplay(){
-        var colorMap = new ColorMap();
+        var grassColorMap = new ColorMap();
 
-        colorMap.mapColor(0, Color.white);
+        grassColorMap.mapColor(0, Color.white);
         for (int i = 1; i < 16; i++) {
-            colorMap.mapColor(i, new Color((int)(i * 8 + 127), 0, 0));
+            grassColorMap.mapColor(i, new Color((int)(i * 8 + 127), 0, 0));
         }
 
-        var displayGrass = new Value2DDisplay(space.getGrassSpace(), colorMap);
+        var displayGrass = new Value2DDisplay(space.getGrassSpace(), grassColorMap);
         displayAgents = new Object2DDisplay(space.getAgentSpace());
 
         displayAgents.setObjectList(agents);
@@ -281,8 +256,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 
     private int countLivingAgents() {
         var count = 0;
-        // TODO replace this with a map and sum... uag fucking java
-        for(final var agent: agents) {
+        for (final var agent: agents) {
             if (agent.isAlive()) {
                 count++;
             }
@@ -292,7 +266,6 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 
     private void addNewAgent(){
         var rabbit = new RabbitsGrassSimulationAgent(initRabbitEnergy, this.space);
-        // TODO get a random place
         var possiblePositions = new ArrayList<Point>();
         for (int i = 0; i < gridSize; i++) {
             for (int j = 0; j < gridSize; j++) {
@@ -311,7 +284,4 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
             System.out.println("WARING: Could not place new agent.");
         }
     }
-
-
-
 }
