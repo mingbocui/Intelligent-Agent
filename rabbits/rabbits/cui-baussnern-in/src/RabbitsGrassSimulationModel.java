@@ -147,6 +147,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
     public int getBirthThreshold() {
         return birthThreshold;
     }
+
     public void setBirthThreshold(int birthThreshold) {
         this.birthThreshold = birthThreshold;
     }
@@ -230,7 +231,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 
         grassColorMap.mapColor(0, Color.white);
         for (int i = 1; i < 16; i++) {
-            grassColorMap.mapColor(i, new Color(i * 8 + 127, 0, 0));
+            grassColorMap.mapColor(i, new Color(0, i * 8 + 127, 0));
         }
 
         var displayGrass = new Value2DDisplay(space.getGrassSpace(), grassColorMap);
@@ -269,6 +270,14 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
                 numberOfNewAgents++;
             }
         }
+
+        if ((agents.size() == gridSize * gridSize) && (numberOfNewAgents > 0)) {
+            System.out.println("Warning: the world is fully occupied");
+        } else {
+            System.out.println(String.format("We will add %d new agents, %d places are still not occupied",
+                    numberOfNewAgents, gridSize * gridSize - agents.size()));
+        }
+
 
         for (int i = 0; i < numberOfNewAgents; i++) {
             this.addNewAgent();

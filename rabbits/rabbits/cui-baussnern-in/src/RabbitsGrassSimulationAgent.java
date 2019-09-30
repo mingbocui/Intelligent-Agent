@@ -55,7 +55,7 @@ public class RabbitsGrassSimulationAgent implements Drawable {
 
     public void draw(SimGraphics G) {
         // TODO color rabbit with amount of energy?
-        G.drawFastRoundRect(Color.green);
+        G.drawFastRoundRect(Color.red);
     }
 
     public int getX() { return x; }
