@@ -81,5 +81,6 @@
         <SOURCES />
       </library>
     </orderEntry>
+    <orderEntry type="library" name="repast" level="project" />
   </component>
 </module>

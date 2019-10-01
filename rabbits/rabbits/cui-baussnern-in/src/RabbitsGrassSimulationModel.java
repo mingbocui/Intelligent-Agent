@@ -45,7 +45,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 
     class AliveAgents implements DataSource, Sequence {
         public Object execute() {
-            return new Double(getSValue());
+            return Double.valueOf(getSValue());
         }
 
         public double getSValue() {
@@ -55,17 +55,17 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 
     class EnergyAgents implements DataSource, Sequence {
         public Object execute() {
-            return new Double(getSValue());
+            return Double.valueOf(getSValue());
         }
 
         public double getSValue() {
-            return agents.stream().mapToInt(a -> a.getEnergy()).sum();
+            return (double)agents.stream().mapToInt(a -> a.getEnergy()).sum();
         }
     }
 
     class GrassAmount implements DataSource, Sequence {
         public Object execute() {
-            return new Double(getSValue());
+            return Double.valueOf(getSValue());
         }
 
         public double getSValue() {
