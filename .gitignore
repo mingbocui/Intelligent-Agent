@@ -97,3 +97,4 @@ Temporary Items
 
 bin/
 history.xml
+**/*.idea/workspace.xml
