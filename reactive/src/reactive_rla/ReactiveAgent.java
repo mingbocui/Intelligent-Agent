@@ -14,61 +14,10 @@ import logist.task.TaskDistribution;
 import logist.topology.Topology;
 
 public class ReactiveAgent implements ReactiveBehavior {
-
-	private HashMap<State, AgentAction> stateActionTable;
-	private HashMap<StateActionPair, Double> valueTable;
+    private ReactiveWorld reactiveWorld;
 
 	private double discountFactor;
 	private double costPerKm;
-
-	public void valueIteration(Topology topology, Agent agent, TaskDistribution td){
-		stateActionTable = new HashMap<State, AgentAction>();
-		valueTable = new HashMap<StateActionPair, Double>();
-
-		AgentHelper agentHelper = new AgentHelper(agent, td, topology);
-		List<State> states = agentHelper.initStates(topology);
-		List<AgentAction> actions = agentHelper.initActions(topology);
-
-		var difference = 100.0;
-		while (difference > Config.VALUE_INTERATION_THRESHOLD) {
-			for (var statePrev : states) {
-				double currValue;
-				// TODO create function: `List<AgentAction> getValidActionsForState(State state)`
-				for (var action : actions) {
-					var stateActionPair = new StateActionPair(statePrev, action);
-					currValue = agentHelper.rewardTable.get(stateActionPair); // just query from the created table
-					for (var stateNext : states) {
-						var transitionSequence = new TransitionSequence(statePrev, action, stateNext);
-						var prob = agentHelper.transitionProbTable.get(transitionSequence); // query from the second
-
-						// TODO not sure, implementation of value iteration
-						AgentAction bestAction = stateActionTable.get(stateNext);
-						var futureValue = valueTable.get(new StateActionPair(stateNext, bestAction));
-						// TODO something is null here... super odd...
-						currValue += discountFactor * prob * futureValue;
-					}
-
-					// check the convergence after update the table
-					var bestAction = stateActionTable.get(statePrev); // best action of the current state
-					var currBestStateActionPair = new StateActionPair(statePrev,bestAction); // best (s,a) pair of current state
-					// if currentSate is not in the transition table
-					if (valueTable.get(currBestStateActionPair) == null) {
-						valueTable.put(new StateActionPair(statePrev, action), currValue);
-						stateActionTable.put(statePrev, action);
-					} else {
-						var preValue = valueTable.get(currBestStateActionPair);
-						if (preValue < currValue) {
-							valueTable.remove(currBestStateActionPair);
-							valueTable.put(new StateActionPair(statePrev, action), currValue);
-							stateActionTable.remove(statePrev);
-							stateActionTable.put(statePrev,action);
-							difference = (currValue - preValue) / preValue;
-						}
-					}
-				}
-			}
-		}
-	}
 
 
 	@Override
@@ -88,7 +37,7 @@ public class ReactiveAgent implements ReactiveBehavior {
 		discountFactor = agent.readProperty("discount-factor", Double.class, 0.95);
 
 	    System.out.println(String.format("Running value iteration for agent %d now", agent.id()));
-		valueIteration(topology, agent, td);
+	    reactiveWorld = new ReactiveWorld(topology, td, agent, discountFactor, costPerKm);
 	}
 
 	/**
@@ -113,22 +62,14 @@ public class ReactiveAgent implements ReactiveBehavior {
 	 */
 	@Override
 	public Action act(Vehicle vehicle, Task availableTask) {
-		var currState = new State(vehicle.getCurrentCity(),null, false);
+	    State state = new State(vehicle.getCurrentCity(), availableTask);
 
-		if (availableTask != null) {
-			// 1. select the best neighbor and move there
-			currState.setToCity(availableTask.deliveryCity);
-		}
+	    Topology.City dest = reactiveWorld.getBestNextCity(state);
 
-		// 1. get real reward for this given action in Task
-		// 2. compare that to a the task of moving to the best neighbour
-		// 3. pick the one with a higher reward
-
-		var agentAction = stateActionTable.get(currState);
-		if (agentAction.isHasPickup()) {
-			return new Pickup(availableTask);
+	    if (availableTask != null && availableTask.deliveryCity == dest) {
+	    	return new Pickup(availableTask);
 		} else {
-			return new Move(agentAction.getDestCity());
+	    	return new Move(dest);
 		}
 	}
 }

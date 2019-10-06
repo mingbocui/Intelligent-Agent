@@ -5,41 +5,111 @@ import logist.topology.Topology.City;
 import java.util.Objects;
 
 public class AgentAction {
-    private City startCity;
-    private City destCity; // destination city of certain action
-    private boolean hasPickup; // two possibilities, pick up the task or move to another city;
+    private City origin;
+    private City destination;
+    private ActionType actionType;
+    private double cost;
+    private double estimatedReward;
 
-    public AgentAction(City startCity, City destCity, boolean hasPickup) {
-        this.startCity = startCity;
-        this.destCity = destCity;
-        this.hasPickup = hasPickup;
+    public enum ActionType {
+        MOVE,
+        PICKUP
     }
 
-    public City getStartCity() {
-        return startCity;
+    /**
+     *
+     * @param origin
+     * @param destination
+     * @param actionType
+     * @param estimatedReward this can be 0.0 if the
+     */
+    public AgentAction(City origin, City destination, ActionType actionType, double estimatedReward) {
+        this.origin = origin;
+        this.destination = destination;
+        this.actionType = actionType;
+
+        this.cost = computeCost();
+
+        // this will throw some errors with the current implementation
+        //if (actionType.equals(ActionType.PICKUP) && estimatedReward == 0.0)  {
+        //    throw new IllegalArgumentException("if the action type is PICKUP and the estimated reward is 0 something is off");
+        //}
+        this.estimatedReward = estimatedReward;
     }
 
-    public City getDestCity() {
-        return destCity;
+    public static AgentAction createMoveAction(City origin, City destination) {
+        return new AgentAction(origin, destination, ActionType.MOVE, 0.0);
     }
 
-    public boolean isHasPickup() {
-        return hasPickup;
+    public static AgentAction createPickupAction(City origin, City destination, double estimatedReward) {
+        return new AgentAction(origin, destination, ActionType.PICKUP, estimatedReward);
     }
 
-    // TODO I used the auto-genarated hashCode() and eqauls() function here, logic correctness checking needed
+    private double computeCost() {
+        var path = origin.pathTo(destination);
+
+        // TODO get the segments and calculate the cost
+        return 0.0;
+    }
+
+    public double getBenefit() {
+        return estimatedReward - cost;
+    }
+
+    public City getOrigin() {
+        return origin;
+    }
+
+    public void setOrigin(City origin) {
+        this.origin = origin;
+    }
+
+    public City getDestination() {
+        return destination;
+    }
+
+    public void setDestination(City destination) {
+        this.destination = destination;
+    }
+
+    public ActionType getActionType() {
+        return actionType;
+    }
+
+    public void setActionType(ActionType actionType) {
+        this.actionType = actionType;
+    }
+
+    public double getCost() {
+        return cost;
+    }
+
+    public void setCost(double cost) {
+        this.cost = cost;
+    }
+
+    public double getEstimatedReward() {
+        return estimatedReward;
+    }
+
+    public void setEstimatedReward(double estimatedReward) {
+        this.estimatedReward = estimatedReward;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof AgentAction)) return false;
-        AgentAction agentAction = (AgentAction) o;
-        return isHasPickup() == agentAction.isHasPickup() &&
-                getStartCity().equals(agentAction.getStartCity()) &&
-                getDestCity().equals(agentAction.getDestCity());
+        AgentAction that = (AgentAction) o;
+        return Double.compare(that.getCost(), getCost()) == 0 &&
+                Double.compare(that.getEstimatedReward(), getEstimatedReward()) == 0 &&
+                getOrigin().equals(that.getOrigin()) &&
+                getDestination().equals(that.getDestination()) &&
+                getActionType() == that.getActionType();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getStartCity(), getDestCity(), isHasPickup());
+        return Objects.hash(getOrigin(), getDestination(), getActionType(), getCost(), getEstimatedReward());
     }
 }

@@ -37,4 +37,9 @@ public class Utils {
 
         return reachableCities.stream().collect(Collectors.toList());
     }
+
+    public static double totalCostForAction(AgentAction agentAction) {
+        // TODO implement this
+        return 0.0;
+    }
 }
