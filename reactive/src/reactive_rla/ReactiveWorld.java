@@ -19,6 +19,7 @@ public class ReactiveWorld {
     private List<State> states;
     private HashMap<State, Double> valueTable;
 
+
     public ReactiveWorld(Topology topology, TaskDistribution taskDistribution, Agent agent, double discountFactor, double costPerKm) {
         this.topology = topology;
         this.taskDistribution = taskDistribution;
@@ -30,12 +31,24 @@ public class ReactiveWorld {
     }
 
     public Topology.City getBestNextCity(State state) {
-        // TODO implement this
 
+        // TODO implement this
         // 1. get real reward for this given action in Task
         // 2. compare that to a the task of moving to the best neighbour
         // 3. pick the one with a higher reward
-        return null;
+
+        Topology.City bestCity = null;
+        double maxReward = -Double.MAX_VALUE;
+
+        var currentCity = state.getCurrentCity();
+        for(final var neighborCity : Utils.getReachableCities(currentCity)){
+            double tempReward = taskDistribution.reward(currentCity, neighborCity);
+            if(tempReward > maxReward){
+                bestCity = neighborCity;
+                maxReward = tempReward;
+            }
+        }
+        return bestCity;
     }
 
     private List<State> initStates() {
