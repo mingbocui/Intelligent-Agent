@@ -5,7 +5,6 @@ import logist.topology.Topology.City;
 import java.util.Objects;
 
 public class AgentAction {
-
     private City startCity;
     private City destCity; // destination city of certain action
     private boolean hasPickup; // two possibilities, pick up the task or move to another city;
@@ -31,6 +30,7 @@ public class AgentAction {
     // TODO I used the auto-genarated hashCode() and eqauls() function here, logic correctness checking needed
     @Override
     public boolean equals(Object o) {
+        // TODO sam fix this
         if (this == o) return true;
         if (!(o instanceof AgentAction)) return false;
         AgentAction agentAction = (AgentAction) o;

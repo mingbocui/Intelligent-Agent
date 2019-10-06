@@ -24,15 +24,12 @@ public class AgentManager {
         this.transitionProbTable = this.initTransitionProbTable(topology);
     }
 
-
-
     public List<State> initStates(Topology topology){
         // initialize all states between every
-        List<State> states = new LinkedList<State>();
-        for(City cityA : topology.cities()){
-//            states.add(new State(cityA, null, true));
-            for(City cityB : topology.cities()){
-                if(cityA != cityB){
+        var states = new LinkedList<State>();
+        for (final var cityA : topology.cities()) {
+            for (final var cityB : topology.cities()) {
+                if (cityA != cityB) {
                     states.add(new State(cityA, cityB, true)); // there is task
                     states.add(new State(cityA, cityB, false));// there is no task
                 }
@@ -106,12 +103,5 @@ public class AgentManager {
             }
         }
         return transitionProbTable;
-
     }
-
-
-
-
-
-
 }

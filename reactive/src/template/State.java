@@ -5,8 +5,6 @@ import logist.topology.Topology.City;
 import java.util.Objects;
 
 public class State {
-
-
     private City fromCity; // define the city where the task is sent from;
     private City toCity; // define the city where the task is sent to;
     private boolean hasTask; // is there any task in the current state;
@@ -15,10 +13,6 @@ public class State {
         this.fromCity = fromCity; // TODO current city??????
         this.toCity = toCity;
         this.hasTask = hasTask;
-    }
-
-    public boolean isHasTask() {
-        return hasTask;
     }
 
     public City getToCity() {
@@ -41,10 +35,14 @@ public class State {
         this.hasTask = hasTask;
     }
 
+    public boolean getHasTask() {
+        return hasTask;
+    }
 
     // TODO auto-generated function, logica correctness needed to be checked
     @Override
     public boolean equals(Object o) {
+        // TODO sam fix this
         if (this == o) return true;
         if (!(o instanceof State)) return false;
         State state = (State) o;
