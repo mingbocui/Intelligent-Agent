@@ -4,9 +4,10 @@ import logist.agent.Agent;
 import logist.task.TaskDistribution;
 import logist.topology.Topology;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 public class ReactiveWorld {
     private Topology topology;
@@ -60,12 +61,105 @@ public class ReactiveWorld {
         return states;
     }
 
+    /**
+     * Uses value iteration to find the optimal strategy.
+     *
+     * Algorithm:
+     *
+     * repeat
+     *   for s ∈ S do
+     *     for a ∈ A do
+     *       Q(s, a) ← R(s, a) + γ * Σ(s'∈S) T (s, a, s') * V(s)
+     *     end for
+     *     V (S) ← max(a) Q(s, a)
+     *   end for
+     * until good enough
+     *
+     * In our case:
+     *   T(s, a, s') = Pr[s -(a)-> s'], this is given by the library
+     *   R(s, a) = 1(task accepted) * r(s, a) - cost(s, a);  1(...) denoting an indicator function
+     *                                                       note that the cost is always added.
+     *                                                       TODO this might be wrong? it will lead to an agent that prefers picking up a lot, no?
+     * @return
+     */
     public HashMap<State, AgentAction> valueIteration () {
-        valueTable = new HashMap<>();
-        var prevValueTable = new HashMap<State, Double>();
-        // TODO create Best(state) - table here as well
+        var valueTable = new HashMap<State, Double>();     // State, reward
+        var prevValueTable = new HashMap<State, Double>(); // bitchy Java complains otherwise
+        var best = new HashMap<State, AgentAction>();
+        var qTable = new HashMap<State, HashMap<AgentAction, Double>>(); // TODO not sure if AgentAction should be replaced with City
 
-        return null;
+        var rnd = new Random();
+
+        // Init of tables
+        for (var state: states) {
+            valueTable.put(state, 0.0);
+            best.put(state.getCurrentCity(),
+                    new AgentAction(
+                            state.getCurrentCity(),
+                            topology.cities().get(rnd.nextInt(topology.cities().size())), // this should be filled out later
+                            AgentAction.ActionType.MOVE,
+                            0.0,
+                            0.0
+                    )); // just some random BS to avoid null pointer errors down below, but this should be adapted
+
+            var t = new HashMap<AgentAction, Double>();
+            t.putAll(state.getActions().stream().collect(Collectors.toMap(a -> a, a -> 0.0)));
+            qTable.put(state, t);
+        }
+
+
+        do {
+            prevValueTable = new HashMap<>(valueTable);
+            for (final var state: states) {
+                if (Config.TESTING) {
+                    System.out.println("considering state " + state.getCurrentCity() + " having " + state.getActions().size() + " states");
+                }
+                for (final var action: state.actions) {
+                    if (Config.TESTING) {
+                        System.out.println("considering state " + state.getCurrentCity() + " action: " + action.getDestination());
+                    }
+
+                    double sum = 0.0;
+                    double sumProba = 0.0;
+
+                    // pick up selected
+                    for (final var possibleDestination: Utils.getReachableCities(state.getCurrentCity())) {
+                        final var v = valueTable.get(new State(state.getCurrentCity(), possibleDestination));
+                        final var p = taskDistribution.probability(state.getCurrentCity(), possibleDestination);
+                        sum += v * p;
+                        sumProba += p;
+                    }
+
+                    // moving on
+                    sum += valueTable.get(new State(state.getCurrentCity(), null)) * (1 - sumProba);
+
+                    final double costOfTravel = state.getCurrentCity().distanceTo(action.getDestination()) * costPerKm;
+                    final double estimatedReward = taskDistribution.reward(state.getCurrentCity(), action.getDestination());
+                    if (action.getDestination().equals(state.getDestination())) {
+                        // pick up selected
+                        qTable.get(state).put(action, estimatedReward - costOfTravel + discountFactor * sum);
+                    } else {
+                        // moving on
+                        qTable.get(state).put(action, -1 * costOfTravel + discountFactor * sum);
+                    }
+                }
+
+                // a bit confusing, but not that we get the entry from qTable given the current state
+                var theChosenOne = Collections.max(qTable.get(state).entrySet(),
+                        Map.Entry.comparingByValue());
+
+                valueTable.put(state, theChosenOne.getValue());
+                best.put(state, theChosenOne.getKey());
+            }
+
+        } while (!convergenceReached(valueTable, prevValueTable, Config.VALUE_ITERATION_THRESHOLD));
+
+        return best;
+    }
+
+    private boolean convergenceReached(HashMap<State, Double> vTableA, HashMap<State, Double> vTableB, double epsilon) {
+        // TODO implement this
+        return false;
     }
 
     /*

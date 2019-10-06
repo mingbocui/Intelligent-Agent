@@ -34,6 +34,10 @@ public class State {
         this.destination = destination;
     }
 
+    public List<AgentAction> getActions() {
+        return actions;
+    }
+
     /**
      * This is outside of the constructor, because at runtime we don't need this.
      * We only need this during the setup phase.
