@@ -62,9 +62,15 @@ public class ReactiveAgent implements ReactiveBehavior {
 	 */
 	@Override
 	public Action act(Vehicle vehicle, Task availableTask) {
-	    State state = new State(vehicle.getCurrentCity(), availableTask);
+		State state;
 
-	    Topology.City dest = reactiveWorld.getBestNextCity(state);
+		if (availableTask != null) {
+			state = new State(vehicle.getCurrentCity(), availableTask.deliveryCity);
+		} else {
+			state = new State(vehicle.getCurrentCity(), null);
+		}
+
+		Topology.City dest = reactiveWorld.getBestNextCity(state);
 
 	    if (availableTask != null && availableTask.deliveryCity == dest) {
 	    	return new Pickup(availableTask);

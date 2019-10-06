@@ -23,12 +23,13 @@ public class AgentAction {
      * @param actionType
      * @param estimatedReward this can be 0.0 if the
      */
-    public AgentAction(City origin, City destination, ActionType actionType, double estimatedReward) {
+    public AgentAction(City origin, City destination, ActionType actionType, double estimatedReward, double costPerKm) {
+        // TODO pass costPerKm somehow down
         this.origin = origin;
         this.destination = destination;
         this.actionType = actionType;
 
-        this.cost = computeCost();
+        this.cost = computeCost(costPerKm);
 
         // this will throw some errors with the current implementation
         //if (actionType.equals(ActionType.PICKUP) && estimatedReward == 0.0)  {
@@ -37,19 +38,16 @@ public class AgentAction {
         this.estimatedReward = estimatedReward;
     }
 
-    public static AgentAction createMoveAction(City origin, City destination) {
-        return new AgentAction(origin, destination, ActionType.MOVE, 0.0);
+    public static AgentAction createMoveAction(City origin, City destination, double costPerKm) {
+        return new AgentAction(origin, destination, ActionType.MOVE, 0.0, costPerKm);
     }
 
-    public static AgentAction createPickupAction(City origin, City destination, double estimatedReward) {
-        return new AgentAction(origin, destination, ActionType.PICKUP, estimatedReward);
+    public static AgentAction createPickupAction(City origin, City destination, double estimatedReward, double costPerKm) {
+        return new AgentAction(origin, destination, ActionType.PICKUP, estimatedReward, costPerKm);
     }
 
-    private double computeCost() {
-        var path = origin.pathTo(destination);
-
-        // TODO get the segments and calculate the cost
-        return 0.0;
+    private double computeCost(double costPerKm) {
+        return origin.distanceTo(destination) * costPerKm;
     }
 
     public double getBenefit() {

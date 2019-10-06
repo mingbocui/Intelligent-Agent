@@ -44,7 +44,7 @@ public class ReactiveWorld {
             for (final var destination: Utils.getReachableCities(origin)) { // this is a bit of an overkill,
                                                                             // but this will reflect the topology
                 var state = new State(origin, destination);
-                state.createActions(this.taskDistribution);
+                state.createActions(this.taskDistribution, this.costPerKm);
 
                 states.add(state);
             }
@@ -55,6 +55,7 @@ public class ReactiveWorld {
     private void valueIteration (Topology topology, Agent agent, TaskDistribution taskDistribution) {
         valueTable = new HashMap<>();
         var prevValueTable = new HashMap<State, Double>();
+        // TODO create Best(state) - table here as well
     }
 
     /*
