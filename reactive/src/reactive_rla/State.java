@@ -6,7 +6,6 @@ import logist.topology.Topology.City;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 public class State {
     private City currentCity;

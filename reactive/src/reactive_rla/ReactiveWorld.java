@@ -31,12 +31,7 @@ public class ReactiveWorld {
     }
 
     public Topology.City getBestNextCity(State state) {
-
         // TODO implement this
-        // 1. get real reward for this given action in Task
-        // 2. compare that to a the task of moving to the best neighbour
-        // 3. pick the one with a higher reward
-
         Topology.City bestCity = null;
         double maxReward = -Double.MAX_VALUE;
 
@@ -65,7 +60,7 @@ public class ReactiveWorld {
         return states;
     }
 
-    private void valueIteration (Topology topology, Agent agent, TaskDistribution taskDistribution) {
+    public HashMap<State, Topology.City> valueIteration () {
         valueTable = new HashMap<>();
         var prevValueTable = new HashMap<State, Double>();
         // TODO create Best(state) - table here as well

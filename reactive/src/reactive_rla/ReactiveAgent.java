@@ -14,7 +14,7 @@ import logist.task.TaskDistribution;
 import logist.topology.Topology;
 
 public class ReactiveAgent implements ReactiveBehavior {
-    private ReactiveWorld reactiveWorld;
+	private HashMap<State, Topology.City> lookupTable;
 
 	private double discountFactor;
 	private double costPerKm;
@@ -37,7 +37,7 @@ public class ReactiveAgent implements ReactiveBehavior {
 		discountFactor = agent.readProperty("discount-factor", Double.class, 0.95);
 
 	    System.out.println(String.format("Running value iteration for agent %d now", agent.id()));
-	    reactiveWorld = new ReactiveWorld(topology, td, agent, discountFactor, costPerKm);
+	    this.lookupTable = new ReactiveWorld(topology, td, agent, discountFactor, costPerKm).valueIteration();
 	}
 
 	/**
@@ -64,13 +64,18 @@ public class ReactiveAgent implements ReactiveBehavior {
 	public Action act(Vehicle vehicle, Task availableTask) {
 		State state;
 
+		// the lookup table states indicate the difference between a task (then destination is not null)
+		// and moving (dest. is null)
 		if (availableTask != null) {
 			state = new State(vehicle.getCurrentCity(), availableTask.deliveryCity);
 		} else {
 			state = new State(vehicle.getCurrentCity(), null);
 		}
 
-		Topology.City dest = reactiveWorld.getBestNextCity(state);
+		// use `availableTask.reward`  to compare it with a Move to any of the neighbouring cities
+		// then make a decision
+
+		Topology.City dest = lookupTable.get(state);
 
 	    if (availableTask != null && availableTask.deliveryCity == dest) {
 	    	return new Pickup(availableTask);
