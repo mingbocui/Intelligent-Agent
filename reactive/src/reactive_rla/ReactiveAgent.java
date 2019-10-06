@@ -14,7 +14,7 @@ import logist.task.TaskDistribution;
 import logist.topology.Topology;
 
 public class ReactiveAgent implements ReactiveBehavior {
-	private HashMap<State, Topology.City> lookupTable;
+	private HashMap<State, AgentAction> lookupTable;
 
 	private double discountFactor;
 	private double costPerKm;
@@ -74,13 +74,15 @@ public class ReactiveAgent implements ReactiveBehavior {
 
 		// use `availableTask.reward`  to compare it with a Move to any of the neighbouring cities
 		// then make a decision
+		var proposedAction = lookupTable.get(state); // proposed learned solution
 
-		Topology.City dest = lookupTable.get(state);
-
-	    if (availableTask != null && availableTask.deliveryCity == dest) {
+		// TODO replace `availableTask.reward` with the real cost of this action
+	    if (availableTask != null
+				&& availableTask.deliveryCity == proposedAction.getDestination()
+				&& availableTask.reward > proposedAction.getBenefit()) {
 	    	return new Pickup(availableTask);
 		} else {
-	    	return new Move(dest);
+	    	return new Move(proposedAction.getDestination());
 		}
 	}
 }

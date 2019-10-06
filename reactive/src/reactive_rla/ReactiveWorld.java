@@ -60,7 +60,7 @@ public class ReactiveWorld {
         return states;
     }
 
-    public HashMap<State, Topology.City> valueIteration () {
+    public HashMap<State, AgentAction> valueIteration () {
         valueTable = new HashMap<>();
         var prevValueTable = new HashMap<State, Double>();
         // TODO create Best(state) - table here as well
