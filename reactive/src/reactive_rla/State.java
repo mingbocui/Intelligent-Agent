@@ -10,7 +10,8 @@ import java.util.Objects;
 public class State {
     private City currentCity;
     private City destination; // a bit wrong... but a Task requires some information which we don't have
-                              // during the value iteration computation, so this is just a placeholder
+
+    // during the value iteration computation, so this is just a placeholder
     private List<AgentAction> actions;
 
     public State(City city, City destination) {
@@ -33,6 +34,11 @@ public class State {
     public void setDestination(City destination) {
         this.destination = destination;
     }
+
+    public List<AgentAction> getActions() {
+        return actions;
+    }
+
 
     /**
      * This is outside of the constructor, because at runtime we don't need this.
