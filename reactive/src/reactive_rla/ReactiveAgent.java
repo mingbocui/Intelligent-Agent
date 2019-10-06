@@ -14,7 +14,7 @@ import logist.task.TaskDistribution;
 import logist.topology.Topology;
 import logist.topology.Topology.City;
 
-public class ReactiveTemplate implements ReactiveBehavior {
+public class ReactiveAgent implements ReactiveBehavior {
 
 	private HashMap<State, AgentAction> stateActionTable;
 	private HashMap<StateActionPair, Double> valueTable;
@@ -37,7 +37,7 @@ public class ReactiveTemplate implements ReactiveBehavior {
 				for (var action : actions) {
 					var stateActionPair = new StateActionPair(statePrev, action);
 					currValue = agentManager.rewardTable.get(stateActionPair); // just query from the created table
-					for (State stateNext : states) {
+					for (var stateNext : states) {
 						var transitionSequence = new TransitionSequence(statePrev, action, stateNext);
 						var prob = agentManager.transitionProbTable.get(transitionSequence); // query from the second
 
@@ -80,14 +80,34 @@ public class ReactiveTemplate implements ReactiveBehavior {
 		discountFactor = agent.readProperty("discount-factor", Double.class, 0.95);
 	}
 
+	/**
+	 * This method is called every time the agent arrives in a new city and is not
+	 * carrying a task. The agent can see at most one available task in the city and
+	 * has to decide whether or not to accept the task. It is possible that there is
+	 * no task in which case availableTask is null.
+     *
+	 * - If the agent decides to pick up the task, the platform will take over the
+	 *   control of the vehicle and deliver the task on the shortest path. The
+	 *   next time this method is called the vehicle will have dropped the task
+	 *   at its destination.
+	 * - If the agent decides to refuse the task, it chooses a neighboring city to
+	 *   move to. A refused task disappears and will not be available the next
+	 *   time the agent visits the city.
+	 * Note: If multiple tasks are available then the LogistPlatform randomly selects
+	 *   the task that is shown to the agent. If no task is available then the agent
+	 *   must return a move action.
+	 * @param vehicle
+	 * @param availableTask
+	 * @return
+	 */
 	@Override
 	public Action act(Vehicle vehicle, Task availableTask) {
 		Action action;
 
 		var currState = new State(null,null, false);
-		var vehicleCurrCity = vehicle.getCurrentCity();
+		var currentCity = vehicle.getCurrentCity();
 
-		currState.setFromCity(vehicleCurrCity);
+		currState.setFromCity(currentCity);
 
 		if (availableTask != null) {
 			currState.setToCity(availableTask.deliveryCity);
