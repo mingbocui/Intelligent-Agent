@@ -20,6 +20,7 @@ public class ReactiveAgent implements ReactiveBehavior {
 	private HashMap<StateActionPair, Double> valueTable;
 
 	private double discountFactor;
+	private double costPerKm;
 
 	public void valueIteration(Topology topology, Agent agent, TaskDistribution td){
 
@@ -34,6 +35,7 @@ public class ReactiveAgent implements ReactiveBehavior {
 		while (difference > Config.VALUE_INTERATION_THRESHOLD) {
 			for (var statePrev : states) {
 				double currValue;
+				// TODO create function: `List<AgentAction> getValidActionsForState(State state)`
 				for (var action : actions) {
 					var stateActionPair = new StateActionPair(statePrev, action);
 					currValue = agentManager.rewardTable.get(stateActionPair); // just query from the created table
@@ -45,8 +47,7 @@ public class ReactiveAgent implements ReactiveBehavior {
 						AgentAction bestAction = stateActionTable.get(stateNext);
 						var futureValue = valueTable.get(new StateActionPair(stateNext, bestAction));
 						// TODO something is null here... super odd...
-						currValue += discountFactor * prob * futureValue; // TODO should it be the configs discount factor? and not the discount factor from the agent?
-						// currValue += Config.DISCOUNT_FACTOR * prob * futureValue; // TODO should it be the configs discount factor? and not the discount factor from the agent?
+						currValue += discountFactor * prob * futureValue;
 					}
 
 					// check the convergence after update the table
@@ -103,12 +104,7 @@ public class ReactiveAgent implements ReactiveBehavior {
 	 */
 	@Override
 	public Action act(Vehicle vehicle, Task availableTask) {
-		Action action;
-
-		var currState = new State(null,null, false);
-		var currentCity = vehicle.getCurrentCity();
-
-		currState.setFromCity(currentCity);
+		var currState = new State(vehicle.getCurrentCity(),null, false);
 
 		if (availableTask != null) {
 			currState.setToCity(availableTask.deliveryCity);
@@ -116,11 +112,9 @@ public class ReactiveAgent implements ReactiveBehavior {
 
 		var agentAction = stateActionTable.get(currState);
 		if (agentAction.isHasPickup()) {
-			action = new Pickup(availableTask);
+			return new Pickup(availableTask);
 		} else {
-			action = new Move(agentAction.getDestCity());
+			return new Move(agentAction.getDestCity());
 		}
-
-		return action;
 	}
 }

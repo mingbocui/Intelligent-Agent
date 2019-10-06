@@ -40,6 +40,9 @@ public class AgentManager {
 
     public List<AgentAction> initActions(Topology topology){
         List<AgentAction> actions = new LinkedList<AgentAction>();
+        // TODO this should be using routes and valid paths only
+        // TODO for the `moving` type: just add the neighbors
+        // TODO for the `pickup` type: check valid paths
         for(City cityA : topology.cities()){
             for(City cityB : topology.cities()){
                 if(cityA != cityB){
@@ -52,7 +55,8 @@ public class AgentManager {
 
     }
 
-    public double getReward(State state, AgentAction action){
+    public double getReward(State state, AgentAction action) {
+        // TODO can the agent have multiple vehicles?
         double res = res = state.getFromCity().distanceTo(state.getToCity()) * (agent.vehicles().get(0).costPerKm());
 //        agent.readProperty("cost-per-km")
 
@@ -71,6 +75,7 @@ public class AgentManager {
         // TODO check whether all (state, action) pair is legal or not
 
         for(State state : states){
+            // TODO use only valid actions for this state
             for(AgentAction action : actions){
                 double reward = getReward(state, action);
                 StateActionPair stateActionPair = new StateActionPair(state, action);
@@ -87,15 +92,16 @@ public class AgentManager {
         List<State> states = initStates(topology);
         List<AgentAction> actions = initActions(topology);
         for(State statePrev : states){
+            // TODO use only valid actions for this state
             for(AgentAction action : actions){
                 for(State stateNext : states){
                     double prob = 0;
                     // if pick up task
-                    // TODO check the correctness here, a little bit of confused about the transmition probability
+                    // TODO think about setup of transition prob table
+                    // TODO check the correctness here, a little bit of confused about the transition probability
                     if(action.isHasPickup() && statePrev.getToCity() == stateNext.getFromCity()){
                         prob = td.probability(statePrev.getFromCity(), stateNext.getFromCity());
-                    }
-                    else if(!action.isHasPickup() && action.getDestCity() == stateNext.getFromCity()){
+                    } else if(!action.isHasPickup() && action.getDestCity() == stateNext.getFromCity()){
                         prob = td.probability(statePrev.getFromCity(), stateNext.getFromCity());
                     }
                     transitionProbTable.put(new TransitionSequence(statePrev, action, stateNext), prob);
