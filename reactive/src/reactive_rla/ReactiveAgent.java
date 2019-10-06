@@ -22,7 +22,6 @@ public class ReactiveAgent implements ReactiveBehavior {
 	private double costPerKm;
 
 	public void valueIteration(Topology topology, Agent agent, TaskDistribution td){
-
 		stateActionTable = new HashMap<State, AgentAction>();
 		valueTable = new HashMap<StateActionPair, Double>();
 
@@ -74,13 +73,15 @@ public class ReactiveAgent implements ReactiveBehavior {
 
 	@Override
 	public void setup(Topology topology, TaskDistribution td, Agent agent) {
-	    System.out.println(String.format("setting up agent with id: %d", agent.id()));
-	    var aCity= topology.cities().get(0);
-	    System.out.println(String.format("Testing getting all destinations for city: %d, %s", aCity.id, aCity.name));
-	    for (final var possibleDest: Utils.getReachableCities(aCity)) {
-	    	System.out.println("\t" + possibleDest.name);
+	    if (Config.TESTING) {
+			System.out.println(String.format("setting up agent with id: %d", agent.id()));
+			var aCity = topology.cities().get(0);
+			System.out.println(String.format("Testing getting all destinations for city: %d, %s", aCity.id, aCity.name));
+			for (final var possibleDest : Utils.getReachableCities(aCity)) {
+				System.out.println("\t" + possibleDest.name);
+			}
+			System.out.println("that was all of them");
 		}
-		System.out.println("that was all of them");
 
 		// Reads the discount factor from the agents.xml file.
 		// If the property is not present it defaults to 0.95
@@ -115,8 +116,13 @@ public class ReactiveAgent implements ReactiveBehavior {
 		var currState = new State(vehicle.getCurrentCity(),null, false);
 
 		if (availableTask != null) {
+			// 1. select the best neighbor and move there
 			currState.setToCity(availableTask.deliveryCity);
 		}
+
+		// 1. get real reward for this given action in Task
+		// 2. compare that to a the task of moving to the best neighbour
+		// 3. pick the one with a higher reward
 
 		var agentAction = stateActionTable.get(currState);
 		if (agentAction.isHasPickup()) {

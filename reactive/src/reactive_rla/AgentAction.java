@@ -30,7 +30,6 @@ public class AgentAction {
     // TODO I used the auto-genarated hashCode() and eqauls() function here, logic correctness checking needed
     @Override
     public boolean equals(Object o) {
-        // TODO sam fix this
         if (this == o) return true;
         if (!(o instanceof AgentAction)) return false;
         AgentAction agentAction = (AgentAction) o;

@@ -3,7 +3,6 @@ package reactive_rla;
 import java.util.Objects;
 
 public class StateActionPair {
-
     // reward table (s, a) pair
     private State state;
     private AgentAction agentAction;
@@ -21,7 +20,6 @@ public class StateActionPair {
         return agentAction;
     }
 
-// TODO check the correctness
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

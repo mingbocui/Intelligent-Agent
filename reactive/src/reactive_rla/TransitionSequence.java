@@ -15,19 +15,14 @@ public class TransitionSequence {
         this.endState = endState;
     }
 
-    public State getStartState() {
-        return startState;
-    }
-
+    public State getStartState() { return startState; }
     public State getEndState() {
         return endState;
     }
-
     public AgentAction getAgentAction() {
         return agentAction;
     }
 
-// TODO check the correctness
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
