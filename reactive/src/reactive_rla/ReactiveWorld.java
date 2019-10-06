@@ -157,6 +157,8 @@ public class ReactiveWorld {
     }
 
     private boolean convergenceReached(HashMap<State, Double> vTableA, HashMap<State, Double> vTableB, double epsilon) {
+        // this would be much easier in a real programming language, e.g. Python:
+        // `diff = sum(a - b for a, b in zip(vTableA.values(), vTableB.values())`
         final var valsA = vTableA.values().toArray();
         final var valsB = vTableB.values().toArray();
 
