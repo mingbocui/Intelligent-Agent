@@ -12,7 +12,6 @@ import logist.plan.Action.Pickup;
 import logist.task.Task;
 import logist.task.TaskDistribution;
 import logist.topology.Topology;
-import logist.topology.Topology.City;
 
 public class ReactiveAgent implements ReactiveBehavior {
 
@@ -27,9 +26,9 @@ public class ReactiveAgent implements ReactiveBehavior {
 		stateActionTable = new HashMap<State, AgentAction>();
 		valueTable = new HashMap<StateActionPair, Double>();
 
-		AgentManager agentManager = new AgentManager(agent, td, topology);
-		List<State> states = agentManager.initStates(topology);
-		List<AgentAction> actions = agentManager.initActions(topology);
+		AgentHelper agentHelper = new AgentHelper(agent, td, topology);
+		List<State> states = agentHelper.initStates(topology);
+		List<AgentAction> actions = agentHelper.initActions(topology);
 
 		var difference = 100.0;
 		while (difference > Config.VALUE_INTERATION_THRESHOLD) {
@@ -38,10 +37,10 @@ public class ReactiveAgent implements ReactiveBehavior {
 				// TODO create function: `List<AgentAction> getValidActionsForState(State state)`
 				for (var action : actions) {
 					var stateActionPair = new StateActionPair(statePrev, action);
-					currValue = agentManager.rewardTable.get(stateActionPair); // just query from the created table
+					currValue = agentHelper.rewardTable.get(stateActionPair); // just query from the created table
 					for (var stateNext : states) {
 						var transitionSequence = new TransitionSequence(statePrev, action, stateNext);
-						var prob = agentManager.transitionProbTable.get(transitionSequence); // query from the second
+						var prob = agentHelper.transitionProbTable.get(transitionSequence); // query from the second
 
 						// TODO not sure, implementation of value iteration
 						AgentAction bestAction = stateActionTable.get(stateNext);
@@ -75,11 +74,20 @@ public class ReactiveAgent implements ReactiveBehavior {
 
 	@Override
 	public void setup(Topology topology, TaskDistribution td, Agent agent) {
-		valueIteration(topology, agent, td);
+	    System.out.println(String.format("setting up agent with id: %d", agent.id()));
+	    var aCity= topology.cities().get(0);
+	    System.out.println(String.format("Testing getting all destinations for city: %d, %s", aCity.id, aCity.name));
+	    for (final var possibleDest: Utils.getReachableCities(aCity)) {
+	    	System.out.println("\t" + possibleDest.name);
+		}
+		System.out.println("that was all of them");
 
 		// Reads the discount factor from the agents.xml file.
 		// If the property is not present it defaults to 0.95
 		discountFactor = agent.readProperty("discount-factor", Double.class, 0.95);
+
+	    System.out.println(String.format("Running value iteration for agent %d now", agent.id()));
+		valueIteration(topology, agent, td);
 	}
 
 	/**
