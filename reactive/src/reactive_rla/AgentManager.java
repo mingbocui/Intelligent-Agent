@@ -1,4 +1,4 @@
-package template;
+package reactive_rla;
 
 import logist.agent.Agent;
 import logist.task.TaskDistribution;

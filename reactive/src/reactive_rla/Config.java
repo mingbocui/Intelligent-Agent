@@ -1,4 +1,4 @@
-package template;
+package reactive_rla;
 
 final public class Config {
     public static final int INIT_VALUE = -Integer.MIN_VALUE;

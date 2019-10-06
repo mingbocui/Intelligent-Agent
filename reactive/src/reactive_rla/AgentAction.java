@@ -1,4 +1,4 @@
-package template;
+package reactive_rla;
 
 import logist.topology.Topology.City;
 

@@ -1,4 +1,4 @@
-package template;
+package reactive_rla;
 
 import java.util.HashMap;
 import java.util.List;
@@ -44,6 +44,7 @@ public class ReactiveAgent implements ReactiveBehavior {
 						// TODO not sure, implementation of value iteration
 						AgentAction bestAction = stateActionTable.get(stateNext);
 						var futureValue = valueTable.get(new StateActionPair(stateNext, bestAction));
+						// TODO something is null here... super odd...
 						currValue += discountFactor * prob * futureValue; // TODO should it be the configs discount factor? and not the discount factor from the agent?
 						// currValue += Config.DISCOUNT_FACTOR * prob * futureValue; // TODO should it be the configs discount factor? and not the discount factor from the agent?
 					}
