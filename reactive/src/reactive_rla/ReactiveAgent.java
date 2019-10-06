@@ -62,6 +62,7 @@ public class ReactiveAgent implements ReactiveBehavior {
 	 */
 	@Override
 	public Action act(Vehicle vehicle, Task availableTask) {
+		// TODO for later: take the task if the reward is high to a reasonable degree
 		State state;
 
 		// the lookup table states indicate the difference between a task (then destination is not null)
@@ -77,9 +78,7 @@ public class ReactiveAgent implements ReactiveBehavior {
 		var proposedAction = lookupTable.get(state); // proposed learned solution
 
 		// TODO replace `availableTask.reward` with the real cost of this action
-	    if (availableTask != null
-				&& availableTask.deliveryCity == proposedAction.getDestination()
-				&& availableTask.reward > proposedAction.getBenefit()) {
+	    if (availableTask != null && availableTask.reward > proposedAction.getBenefit()) {
 	    	return new Pickup(availableTask);
 		} else {
 	    	return new Move(proposedAction.getDestination());

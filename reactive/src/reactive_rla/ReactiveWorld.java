@@ -64,6 +64,8 @@ public class ReactiveWorld {
         valueTable = new HashMap<>();
         var prevValueTable = new HashMap<State, Double>();
         // TODO create Best(state) - table here as well
+
+        return null;
     }
 
     /*
