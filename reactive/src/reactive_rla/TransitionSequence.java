@@ -15,10 +15,14 @@ public class TransitionSequence {
         this.endState = endState;
     }
 
-    public State getStartState() { return startState; }
+    public State getStartState() {
+        return startState;
+    }
+
     public State getEndState() {
         return endState;
     }
+
     public AgentAction getAgentAction() {
         return agentAction;
     }

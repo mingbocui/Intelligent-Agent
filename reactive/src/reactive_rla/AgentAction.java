@@ -17,7 +17,12 @@ public class AgentAction {
     }
 
     /**
-     *
+     * Dummy empty constructor
+     */
+    public AgentAction() {
+    }
+
+    /**
      * @param origin
      * @param destination
      * @param actionType
@@ -109,5 +114,16 @@ public class AgentAction {
     @Override
     public int hashCode() {
         return Objects.hash(getOrigin(), getDestination(), getActionType(), getCost(), getEstimatedReward());
+    }
+
+    @Override
+    public String toString() {
+        return "AgentAction{" +
+                "origin=" + origin +
+                ", destination=" + destination +
+                ", actionType=" + actionType +
+                ", cost=" + cost +
+                ", estimatedReward=" + estimatedReward +
+                '}';
     }
 }
