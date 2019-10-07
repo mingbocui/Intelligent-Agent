@@ -22,7 +22,7 @@ public class ReactiveWorld {
 
         this.states = initStates();
 
-        if (Config.TESTING && Config.DEBUG_LEVEL >= 10) {
+        if (Config.TESTING && Config.DEBUG_LEVEL >= 20) {
             System.out.println("All possible states:");
             this.states.forEach(s -> System.out.println(s));
         }
@@ -89,8 +89,8 @@ public class ReactiveWorld {
         }
 
         if (Config.TESTING && Config.DEBUG_LEVEL >= 10) {
-            final var magicCity = "Brest";
-            final var magicTarget = "Bordeaux";
+            final var magicCity = "Paris";
+            final var magicTarget = "Brest";
             var dummyState = new State(topology.parseCity(magicCity), topology.parseCity(magicTarget));
             var sNull = qTable.containsKey(dummyState);
             var sNullWithActions = qTable.containsKey(dummyState.createActions(taskDistribution, 0.0));
@@ -105,11 +105,11 @@ public class ReactiveWorld {
                     .collect(Collectors.toMap(v -> v.getKey(), v -> v.getValue().doubleValue())));
 
             for (final var state : states) {
-                if (Config.TESTING && Config.DEBUG_LEVEL >= 10) {
+                if (Config.TESTING && Config.DEBUG_LEVEL >= 20) {
                     System.out.println("considering state " + state);
                 }
                 for (final var action : state.getActions()) {
-                    if (Config.TESTING && Config.DEBUG_LEVEL >= 10) {
+                    if (Config.TESTING && Config.DEBUG_LEVEL >= 20) {
                         System.out.println("considering state's action" + state + " " + action);
                     }
 
