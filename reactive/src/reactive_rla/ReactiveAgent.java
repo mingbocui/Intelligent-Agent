@@ -2,6 +2,7 @@ package reactive_rla;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Random;
 
 import logist.simulation.Vehicle;
 import logist.agent.Agent;
@@ -21,23 +22,31 @@ public class ReactiveAgent implements ReactiveBehavior {
 
 
 	@Override
-	public void setup(Topology topology, TaskDistribution td, Agent agent) {
+	public void setup(Topology topology, TaskDistribution taskDistribution, Agent agent) {
 	    if (Config.TESTING) {
+	    	// reachable cities test
 			System.out.println(String.format("setting up agent with id: %d", agent.id()));
-			var aCity = topology.cities().get(0);
+			final var aCity = topology.cities().get(0);
 			System.out.println(String.format("Testing getting all destinations for city: %d, %s", aCity.id, aCity.name));
 			for (final var possibleDest : Utils.getReachableCities(aCity)) {
 				System.out.println("\t" + possibleDest.name);
 			}
 			System.out.println("that was all of them");
+
+			// Dummy state action creation test
+			final var dummyState = new State(topology.randomCity(new Random()), null);
+			dummyState.createActions(taskDistribution, 0.0);
+			System.out.println("Creating dummy state with no destination: " + dummyState);
 		}
+
 
 		// Reads the discount factor from the agents.xml file.
 		// If the property is not present it defaults to 0.95
 		discountFactor = agent.readProperty("discount-factor", Double.class, 0.95);
+	    costPerKm = agent.vehicles().get(0).costPerKm(); // TODO is there a better way?
 
 	    System.out.println(String.format("Running value iteration for agent %d now", agent.id()));
-	    this.lookupTable = new ReactiveWorld(topology, td, agent, discountFactor, costPerKm).valueIteration();
+	    this.lookupTable = new ReactiveWorld(topology, taskDistribution, discountFactor, costPerKm).valueIteration();
 	}
 
 	/**
@@ -62,23 +71,25 @@ public class ReactiveAgent implements ReactiveBehavior {
 	 */
 	@Override
 	public Action act(Vehicle vehicle, Task availableTask) {
-		// TODO for later: take the task if the reward is high to a reasonable degree
 		State state;
 
 		// the lookup table states indicate the difference between a task (then destination is not null)
 		// and moving (dest. is null)
+		// NB.: Kotlin would have been much nicer here... again
 		if (availableTask != null) {
 			state = new State(vehicle.getCurrentCity(), availableTask.deliveryCity);
 		} else {
 			state = new State(vehicle.getCurrentCity(), null);
 		}
 
-		// use `availableTask.reward`  to compare it with a Move to any of the neighbouring cities
-		// then make a decision
 		var proposedAction = lookupTable.get(state); // proposed learned solution
 
-		// TODO replace `availableTask.reward` with the real cost of this action
-	    if (availableTask != null && availableTask.reward > proposedAction.getBenefit()) {
+        // the Config.ACTION_ACCEPTANCE_PERCENTAGE * benefit allows us to be a bit more flexible with the acceptance
+		// of a real world task.
+        // TODO compare the task to the given distribution of the task
+		// TODO refuse to work if reward is lower than cost
+	    if (availableTask != null
+				&& (Config.ACTION_ACCEPTANCE_PERCENTAGE * Utils.benefit(availableTask, costPerKm)) > proposedAction.getBenefit()) {
 	    	return new Pickup(availableTask);
 		} else {
 	    	return new Move(proposedAction.getDestination());

@@ -115,4 +115,15 @@ public class AgentAction {
     public int hashCode() {
         return Objects.hash(getOrigin(), getDestination(), getActionType(), getCost(), getEstimatedReward());
     }
+
+    @Override
+    public String toString() {
+        return "AgentAction{" +
+                "origin=" + origin +
+                ", destination=" + destination +
+                ", actionType=" + actionType +
+                ", cost=" + cost +
+                ", estimatedReward=" + estimatedReward +
+                '}';
+    }
 }

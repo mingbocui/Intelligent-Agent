@@ -1,8 +1,10 @@
 package reactive_rla;
 
+import logist.task.Task;
 import logist.topology.Topology;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -38,8 +40,11 @@ public class Utils {
         return reachableCities.stream().collect(Collectors.toList());
     }
 
-    public static double totalCostForAction(AgentAction agentAction) {
-        // TODO implement this
-        return 0.0;
+    public static double benefit(Task task, double costPerKm) {
+        return task.reward - task.pickupCity.distanceTo(task.deliveryCity) * costPerKm;
+    }
+
+    public static double costOfTravel(Topology.City origin, Topology.City destination, double costPerKm) {
+        return origin.distanceTo(destination) * costPerKm;
     }
 }
