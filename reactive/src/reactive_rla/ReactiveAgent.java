@@ -17,13 +17,14 @@ import logist.topology.Topology;
 public class ReactiveAgent implements ReactiveBehavior {
 	private HashMap<State, AgentAction> lookupTable;
 
+	private int id;
 	private double discountFactor;
 	private double costPerKm;
 
 
 	@Override
 	public void setup(Topology topology, TaskDistribution taskDistribution, Agent agent) {
-	    if (Config.TESTING) {
+	    if (Config.TESTING && Config.DEBUG_LEVEL >= 10) {
 	    	// reachable cities test
 			System.out.println(String.format("setting up agent with id: %d", agent.id()));
 			final var aCity = topology.cities().get(0);
@@ -44,6 +45,7 @@ public class ReactiveAgent implements ReactiveBehavior {
 		// If the property is not present it defaults to 0.95
 		discountFactor = agent.readProperty("discount-factor", Double.class, 0.95);
 	    costPerKm = agent.vehicles().get(0).costPerKm(); // TODO is there a better way?
+		id = agent.id();
 
 	    System.out.println(String.format("Running value iteration for agent %d now", agent.id()));
 	    this.lookupTable = new ReactiveWorld(topology, taskDistribution, discountFactor, costPerKm).valueIteration();
@@ -71,6 +73,9 @@ public class ReactiveAgent implements ReactiveBehavior {
 	 */
 	@Override
 	public Action act(Vehicle vehicle, Task availableTask) {
+		if (Config.TESTING && Config.DEBUG_LEVEL >= 20) {
+			System.out.println("Agent " + id + " act called with " + availableTask);
+		}
 		State state;
 
 		// the lookup table states indicate the difference between a task (then destination is not null)
@@ -88,11 +93,19 @@ public class ReactiveAgent implements ReactiveBehavior {
 		// of a real world task.
         // TODO compare the task to the given distribution of the task
 		// TODO refuse to work if reward is lower than cost
+		// TODO
 	    if (availableTask != null
-				&& (Config.ACTION_ACCEPTANCE_PERCENTAGE * Utils.benefit(availableTask, costPerKm)) > proposedAction.getBenefit()) {
+				&& Utils.benefit(availableTask, costPerKm) >= proposedAction.getBenefit()) {
+	    	if (Config.TESTING && Config.DEBUG_LEVEL >= 20) {
+				System.out.println("Agent " + id + " decided to pick something up: " + availableTask);
+			}
 	    	return new Pickup(availableTask);
 		} else {
-	    	return new Move(proposedAction.getDestination());
+			if (Config.TESTING && Config.DEBUG_LEVEL >= 20) {
+				System.out.println("Agent " + id + " decided to move to " + proposedAction.getDestination()
+						+ " with proposed action " + proposedAction);
+			}
+			return new Move(proposedAction.getDestination());
 		}
 	}
 }

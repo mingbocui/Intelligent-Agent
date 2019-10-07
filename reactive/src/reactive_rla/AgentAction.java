@@ -19,10 +19,10 @@ public class AgentAction {
     /**
      * Dummy empty constructor
      */
-    public AgentAction() {}
+    public AgentAction() {
+    }
 
     /**
-     *
      * @param origin
      * @param destination
      * @param actionType

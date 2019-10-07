@@ -26,7 +26,7 @@ public class ReactiveWorld {
 
         this.states = initStates();
 
-        if (Config.TESTING) {
+        if (Config.TESTING && Config.DEBUG_LEVEL >= 10) {
             System.out.println("All possible states:");
             this.states.forEach(s -> System.out.println(s));
         }
@@ -80,12 +80,26 @@ public class ReactiveWorld {
             best.put(state, new AgentAction());
 
             var t = new HashMap<AgentAction, Double>();
-            // TODO null pointer here?
-            if (state.getActions() == null) {
-                System.out.println("actions are null?");
-            }
             t.putAll(state.getActions().stream().collect(Collectors.toMap(a -> a, a -> 0.0)));
+
+            if (t.size() != state.getActions().size())  {
+                throw new IllegalStateException("some double keys in the actions" + state);
+            }
+
+            if (qTable.containsKey(state)) {
+                throw new IllegalStateException("qTable already has that key: " + state);
+            }
             qTable.put(state, t);
+        }
+
+        if (Config.TESTING && Config.DEBUG_LEVEL >= 10) {
+            final var magicCity = "Brest";
+            final var magicTarget = "Bordeaux";
+            var dummyState = new State(topology.parseCity(magicCity), topology.parseCity(magicTarget));
+            var sNull = qTable.containsKey(dummyState);
+            var sNullWithActions = qTable.containsKey(dummyState.createActions(taskDistribution, 0.0));
+
+            System.out.println("did we get " + magicCity + "? " + sNull + ", " + sNullWithActions + dummyState);
         }
 
         // Value iteration
@@ -95,11 +109,11 @@ public class ReactiveWorld {
                     .collect(Collectors.toMap(v -> v.getKey(), v -> v.getValue().doubleValue())));
 
             for (final var state : states) {
-                if (Config.TESTING) {
+                if (Config.TESTING && Config.DEBUG_LEVEL >= 10) {
                     System.out.println("considering state " + state);
                 }
                 for (final var action : state.getActions()) {
-                    if (Config.TESTING) {
+                    if (Config.TESTING && Config.DEBUG_LEVEL >= 10) {
                         System.out.println("considering state's action" + state + " " + action);
                     }
 
@@ -128,14 +142,13 @@ public class ReactiveWorld {
                     }
                 }
 
-                if (qTable.containsKey(state)) {
+                if (!qTable.containsKey(state)) {
                     System.out.println("We don't have such a state in our qTable:" + state);
+                    throw new IllegalStateException("something is off");
                 }
 
-                // a bit confusing, but not that we get the entry from qTable given the current state
                 var theChosenOne = Collections.max(qTable.get(state).entrySet(),
                         Map.Entry.comparingByValue());
-
                 valueTable.put(state, theChosenOne.getValue());
                 best.put(state, theChosenOne.getKey());
             }

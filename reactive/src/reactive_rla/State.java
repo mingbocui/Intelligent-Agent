@@ -53,22 +53,20 @@ public class State {
     public State createActions(TaskDistribution taskDistribution, double costPerKm) {
         this.actions = new ArrayList<>();
 
-        // 1. moving to the next neighbors
+        // 1. moving to the next neighbors, this is always possible
         this.currentCity.neighbors()
             .stream()
             .map(c -> AgentAction.createMoveAction(currentCity, c, costPerKm))
             .forEach(this.actions::add);
 
-        // 2. delivering a package
+        // 2. delivering a package, only if we have a target city
         // TODO not sure if we should add the expected reward here, but it makes sense...
-        Utils.getReachableCities(this.currentCity)
-             .stream()
-             .map(c -> AgentAction.createPickupAction(currentCity, c, taskDistribution.reward(currentCity, c), costPerKm))
-             .forEach(this.actions::add);
-
-        //if (Config.TESTING) {
-        //    System.out.println("created actions, state is now: " + this.toString());
-        //}
+        if (this.destination != null) {
+            this.actions.add(AgentAction.createPickupAction(currentCity,
+                    destination,
+                    taskDistribution.reward(currentCity, destination),
+                    costPerKm));
+        }
 
         return this;
     }
