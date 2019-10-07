@@ -19,6 +19,7 @@ public class ReactiveAgent implements ReactiveBehavior {
     private int id;
     private double discountFactor;
     private double costPerKm;
+    private double greedyFactor;
 
 
     @Override
@@ -42,6 +43,7 @@ public class ReactiveAgent implements ReactiveBehavior {
         // If the property is not present it defaults to 0.95
         discountFactor = agent.readProperty("discount-factor", Double.class, 0.95);
         costPerKm = agent.vehicles().get(0).costPerKm(); // TODO is there a better way?
+        greedyFactor = agent.readProperty("greedy-factor", Double.class, 1.0);
         id = agent.id();
 
         System.out.println(String.format("Running value iteration for agent %d now", agent.id()));
@@ -104,7 +106,7 @@ public class ReactiveAgent implements ReactiveBehavior {
         }
 
         if (availableTask != null
-                && Utils.benefit(availableTask, costPerKm) >= proposedAction.getBenefit()) {
+                && Utils.benefit(availableTask, costPerKm) >= proposedAction.getBenefit() * greedyFactor) {
             if (Config.TESTING && Config.VERBOSITY_LEVEL >= 10) {
                 System.out.println("Agent " + id + " decided to pick something up: " + availableTask);
             }

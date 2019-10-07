@@ -7,6 +7,7 @@
 	<agent name="reactive-rla">
 		<set class-path="bin/"/>
 		<set class-name="reactive_rla.ReactiveAgent"/>
+		<set greedy-factor="1.0" />
 		<set discount-factor=".85"/>
 	</agent>
 
@@ -19,6 +20,7 @@
 	<agent name="reactive-rla95">
 		<set class-path="bin/"/>
 		<set class-name="reactive_rla.ReactiveAgent"/>
+		<set greedy-factor="1.0" />
 		<set discount-factor=".95"/>
 	</agent>
 
