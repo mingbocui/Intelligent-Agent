@@ -3,8 +3,6 @@ package reactive_rla;
 import logist.task.Task;
 import logist.topology.Topology;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,7 +19,7 @@ public class Utils {
         // simple breadth-first algorithm to get all reachable cities
         while (citiesToProcess.size() > 0) {
             var newCities = new HashSet<Topology.City>();
-            for (final var city: citiesToProcess) {
+            for (final var city : citiesToProcess) {
                 var neighbors = city.neighbors();
 
                 newCities.addAll(neighbors);
@@ -33,9 +31,7 @@ public class Utils {
             citiesToProcess.removeIf(c -> seenCities.contains(c));
         }
 
-        if (reachableCities.contains(origin)) {
-            reachableCities.remove(origin);
-        }
+        reachableCities.remove(origin);
 
         return reachableCities.stream().collect(Collectors.toList());
     }

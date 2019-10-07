@@ -1,13 +1,9 @@
 package reactive_rla;
 
-import logist.agent.Agent;
 import logist.task.TaskDistribution;
 import logist.topology.Topology;
-import org.apache.commons.math.util.MathUtils;
 
 import java.util.*;
-import java.util.Map.Entry;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 public class ReactiveWorld {
@@ -82,7 +78,7 @@ public class ReactiveWorld {
             var t = new HashMap<AgentAction, Double>();
             t.putAll(state.getActions().stream().collect(Collectors.toMap(a -> a, a -> 0.0)));
 
-            if (t.size() != state.getActions().size())  {
+            if (t.size() != state.getActions().size()) {
                 throw new IllegalStateException("some double keys in the actions" + state);
             }
 
@@ -171,7 +167,7 @@ public class ReactiveWorld {
 
         double diff = 0.0;
         for (int i = 0; i < valsA.length; i++) {
-            diff += (double)valsA[i] - (double)valsB[i];
+            diff += (double) valsA[i] - (double) valsB[i];
         }
 
         return diff <= epsilon;

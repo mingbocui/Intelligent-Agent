@@ -10,7 +10,7 @@ import java.util.Objects;
 public class State {
     private City currentCity;
     private City destination; // a bit wrong... but a Task requires some information which we don't have
-                              // during the value iteration computation, so this is just a placeholder
+    // during the value iteration computation, so this is just a placeholder
     private List<AgentAction> actions;
 
     public State(City city, City destination) {
@@ -48,6 +48,7 @@ public class State {
     /**
      * This is outside of the constructor, because at runtime we don't need this.
      * We only need this during the setup phase.
+     *
      * @return
      */
     public State createActions(TaskDistribution taskDistribution, double costPerKm) {
@@ -55,9 +56,9 @@ public class State {
 
         // 1. moving to the next neighbors, this is always possible
         this.currentCity.neighbors()
-            .stream()
-            .map(c -> AgentAction.createMoveAction(currentCity, c, costPerKm))
-            .forEach(this.actions::add);
+                .stream()
+                .map(c -> AgentAction.createMoveAction(currentCity, c, costPerKm))
+                .forEach(this.actions::add);
 
         // 2. delivering a package, only if we have a target city
         // TODO not sure if we should add the expected reward here, but it makes sense...
