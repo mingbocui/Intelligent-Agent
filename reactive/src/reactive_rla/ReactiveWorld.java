@@ -12,6 +12,7 @@ public class ReactiveWorld {
     private double discountFactor;
     private double costPerKm;
     private List<State> states;
+    private int nIterations = 0;
 
 
     public ReactiveWorld(Topology topology, TaskDistribution taskDistribution, double discountFactor, double costPerKm) {
@@ -31,12 +32,13 @@ public class ReactiveWorld {
     private List<State> initStates() {
         var states = new ArrayList<State>();
         for (final var origin : topology.cities()) {
+            // The case that we can actually pick something up
             for (final var destination : Utils.getReachableCities(origin)) {
                 // using Utils.getReachableCities(origin) is a bit of an overkill but this will reflect the topology
                 states.add(new State(origin, destination).createActions(this.taskDistribution, this.costPerKm));
             }
 
-            // the "pick up" state
+            // And here there is nothing to pick up
             states.add(new State(origin, null).createActions(this.taskDistribution, this.costPerKm));
         }
 
@@ -149,7 +151,11 @@ public class ReactiveWorld {
                 best.put(state, theChosenOne.getKey());
             }
 
+            nIterations += 1;
+
         } while (!convergenceReached(valueTable, prevValueTable, Config.VALUE_ITERATION_THRESHOLD));
+
+        System.out.println("Reached convergence after " + nIterations + " iterations.");
 
         return best;
     }
