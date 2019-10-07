@@ -9,5 +9,17 @@
 		<set class-name="reactive_rla.ReactiveAgent"/>
 		<set discount-factor=".85"/>
 	</agent>
-	
+
+	<agent name="reactive-random">
+		<set class-path="bin/"/>
+		<set class-name="reactive_rla.RandomAgent"/>
+		<set discount-factor=".85"/>
+	</agent>
+
+	<agent name="reactive-rla95">
+		<set class-path="bin/"/>
+		<set class-name="reactive_rla.ReactiveAgent"/>
+		<set discount-factor=".95"/>
+	</agent>
+
 </agents>
