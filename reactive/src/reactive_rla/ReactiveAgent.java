@@ -23,7 +23,7 @@ public class ReactiveAgent implements ReactiveBehavior {
 
     @Override
     public void setup(Topology topology, TaskDistribution taskDistribution, Agent agent) {
-        if (Config.TESTING && Config.DEBUG_LEVEL >= 20) {
+        if (Config.TESTING && Config.VERBOSITY_LEVEL >= 20) {
             // reachable cities test
             System.out.println(String.format("setting up agent with id: %d", agent.id()));
             final var aCity = topology.parseCity("Paris");
@@ -71,7 +71,7 @@ public class ReactiveAgent implements ReactiveBehavior {
      */
     @Override
     public Action act(Vehicle vehicle, Task availableTask) {
-        if (Config.TESTING && Config.DEBUG_LEVEL >= 10) {
+        if (Config.TESTING && Config.VERBOSITY_LEVEL >= 10) {
             System.out.println("Agent " + id + " act called with " + availableTask);
         }
         State state;
@@ -91,7 +91,8 @@ public class ReactiveAgent implements ReactiveBehavior {
         // of a real world task.
         // TODO compare the task to the given distribution of the task
         // TODO refuse to work if reward is lower than cost
-        // TODO
+
+        // This should never be the case, but just in case...
         if (proposedAction == null) {
             System.out.println("Huh? no action, given state is: " + state
                     + " this is of course a bit weird... so let's go with a heuristic");
@@ -104,12 +105,12 @@ public class ReactiveAgent implements ReactiveBehavior {
 
         if (availableTask != null
                 && Utils.benefit(availableTask, costPerKm) >= proposedAction.getBenefit()) {
-            if (Config.TESTING && Config.DEBUG_LEVEL >= 10) {
+            if (Config.TESTING && Config.VERBOSITY_LEVEL >= 10) {
                 System.out.println("Agent " + id + " decided to pick something up: " + availableTask);
             }
             return new Pickup(availableTask);
         } else {
-            if (Config.TESTING && Config.DEBUG_LEVEL >= 10) {
+            if (Config.TESTING && Config.VERBOSITY_LEVEL >= 10) {
                 System.out.println("Agent " + id + " decided to move to " + proposedAction.getDestination()
                         + " with proposed action " + proposedAction);
             }
