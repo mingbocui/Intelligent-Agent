@@ -25,7 +25,7 @@ public class ReactiveWorld {
 
         if (Config.TESTING && Config.VERBOSITY_LEVEL >= 20) {
             System.out.println("All possible states:");
-            this.states.forEach(s -> System.out.println(s));
+            this.states.forEach(System.out::println);
         }
     }
 
@@ -70,7 +70,7 @@ public class ReactiveWorld {
         var valueTable = new HashMap<State, Double>();     // State, reward
         var prevValueTable = new HashMap<State, Double>();
         var best = new HashMap<State, AgentAction>();
-        var qTable = new HashMap<State, HashMap<AgentAction, Double>>(); // TODO not sure if AgentAction should be replaced with City
+        var qTable = new HashMap<State, HashMap<AgentAction, Double>>();
 
         // Init of tables
         for (final var state : states) {
@@ -104,7 +104,7 @@ public class ReactiveWorld {
         do {
             // super important to make a deep copy of the previous vTable
             prevValueTable = new HashMap<>(valueTable.entrySet().stream()
-                    .collect(Collectors.toMap(v -> v.getKey(), v -> v.getValue().doubleValue())));
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
 
             for (final var state : states) {
                 if (Config.TESTING && Config.VERBOSITY_LEVEL >= 20) {
