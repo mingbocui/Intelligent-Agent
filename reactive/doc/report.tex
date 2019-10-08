@@ -1,0 +1,141 @@
+\documentclass[11pt]{article}
+
+\usepackage[latin1]{inputenc}
+\usepackage[T1]{fontenc}
+
+\usepackage{subfigure}
+\usepackage{subcaption}
+\usepackage[latin1]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{subfig}
+\usepackage{multirow}
+\usepackage[a4paper, margin= 2cm]{geometry}
+\usepackage{bm}
+
+\usepackage{listings}
+\usepackage{pythonhighlight}
+\usepackage{color}
+
+
+\usepackage{amsmath}
+\usepackage{textcomp}
+\usepackage[top=0.8in, bottom=0.8in, left=0.8in, right=0.8in]{geometry}
+% add other packages here
+
+
+
+
+
+\usepackage[inline]{enumitem}
+% put your group number and names in the author field
+\title{\bf Exercise 2: A Reactive Agent for the Pickup and Delivery Problem}
+\author{Group \textnumero: 29: 298032, 293330}
+
+% the report should not be longer than 3 pages
+
+\begin{document}
+\maketitle
+
+\section{Problem Representation}
+
+\subsection{Representation Description}
+% describe how you design the state representation, the possible actions, the reward table and the probability transition table
+
+We consider the \textbf{state} (from the viewpoint of a single agent) to be the tuple of \texttt{(current city, available task)}. Whereas \texttt{current city} is the current city of the a given agent (or his only vehicle to be precise), and \texttt{available task} is the available task, which can be nothing. Based on this information the agent makes his next move.
+
+For each of these states there are two types of possible \textbf{actions}:
+\begin{enumerate*}[label={\alph*)}]
+\item pick up the package (of which there can be zero or more actions), and
+\item move to and adjacent city.
+\end{enumerate*}
+Assuming we have in total $n$ cities and city \textit{A} has only one neighbour, city \textit{A} has $n - 1$ possible package-destinations and $1$ moving-destinations, resulting in a total of $(n - 1) + 1 = n$ actions.
+
+The \textbf{reward table} needs to consider the state and the taken action, it is thus a function (in the mathematical sense) that maps to a value, the long-term expected benefit (which is the reward minus the cost of travelling).
+The \textbf{probability transition table} is computed on the fly.
+
+\subsection{Implementation Details}
+% describe the implementation details of the representations above and the implementation details of the reinforcement learning algorithm you implemented
+
+The \textbf{state} is implemented as a class. The case that no package was available upon arrival in the city is handled by a \texttt{null} reference in the destination city. Since each state knows its origin city, it can generate the actions that can be done starting from this city.
+The \textbf{actions} are implemented as a class with a \texttt{type} (internally as a \texttt{Enum}, no generics nor traits). This class is not much more than a POJO.
+The other tables such as \textit{value table}, \textit{Q-table} and \textbf{reward table} are implemented as \texttt{HashMap}. Linking a state to a reward, resp. a state to a action-reward tuple.
+
+In order to simplify the calculations and enforce correctness every value given by the framework is converted to a \texttt{double}. The weights of each package was ignored, as the agent can only carry one package at a time and the weight seemed to be low enough to not have any influence on the fuel consumption and thus cost-of-travel.
+
+Upon arrival at a new city each agent considers its current state, looks up the recommended action, compares its benefits to the to-be-gained benefit from picking up the package (if any). If the to-be-gained benefit is larger or equals to the recommended action (which might be a move), the agent takes the sure gain and picks up the package.
+
+\section{Results}
+% in this section, you describe several results from the experiments with your reactive agent
+
+\subsection{Experiment 1: Discount factor}
+% the purpose of this experiment is to understand how the discount factor influences the result
+
+\subsubsection{Setting}
+% you describe how you perform the experiment (you also need to specify the configuration used for the experiment)
+To experiment with the effect of the different discount factors, we have simulated by setting discount factors equals to 0, 0.35, 0.55, 0.95 respectively.
+
+\subsubsection{Observations}
+% you describe the experimental results and the conclusions you inferred from these results
+
+\begin{figure}[htbp]
+\centering
+ 
+\subfigure[discountFactor=0]{
+\begin{minipage}[t]{0.4\linewidth}
+\centering
+\includegraphics[width=1.0\textwidth]{ReactiveAgent/screenshot/discountFactor00.PNG}
+\end{minipage}%
+}%
+\subfigure[discountFactor=0.35]{
+\begin{minipage}[t]{0.4\linewidth}
+\centering
+\includegraphics[width=1.0\textwidth]{ReactiveAgent/screenshot/discountFactor035.PNG}
+\end{minipage}%
+}%
+
+\subfigure[discountFactor=0.55]{
+\begin{minipage}[t]{0.4\linewidth}
+\centering
+\includegraphics[width=1\textwidth]{ReactiveAgent/screenshot/discountFactor055.PNG}
+\end{minipage}
+}%
+\subfigure[discountFactor=0.95]{
+\begin{minipage}[t]{0.4\linewidth}
+\centering
+\includegraphics[width=0.92\textwidth]{ReactiveAgent/screenshot/discountFactor095.PNG}
+\end{minipage}
+}%
+ 
+\centering
+
+\caption{Average rewards of four Reactive Agents with different discount factor}
+\label{fig:discount_factor_comparision}
+\end{figure}
+
+Figure \ref{fig:discount_factor_comparision} shows the reward per kilometer of four reactive agents with different discount factors. The curve of average rewards could converge to a stable value in all situations, even when discount factor equals to 0 (as shown in (a)). However, the converged average rewards harvested by these four agents are almost the same. This result contradicts to our expectations. Basically, the agent will gain higher rewards when it was assigned with a bigger discount factor. This is because the agent will do more calculations to peek into the more promising future. It will learn to refuse some task temporarily, and then turn to the direction that promises it higher accumulated reward in the future, but instead turn to the direction that benefits it with immediate reward.
+% Besides, as the discount factor goes bigger, the number of iterations needed to enable a convergence is also bigger.
+
+\subsection{Experiment 2: Comparisons with dummy agents}
+% you compare the results of your agent with two dummy agents: the random agent that was already given in the starter files and another dummy agent that you define and create. You should report the results from the simulations using the topologies given in the starter files and optionally, additional topologies that you create.
+
+\subsubsection{Setting}
+% you describe how you perform the experiment and you describe the dummy agent you created (you also need to specify the configuration used for the experiment)
+To make a clear comparison between the Dummy Agent and Reactive Agent, we run the simulation of two agents (random agent and reactive agent) with the same discount factor (0.95).
+\subsubsection{Observations}
+% elaborate on the observed results
+\begin{figure}[H]
+ \begin{center}
+  \includegraphics[width=0.5\textwidth]{ReactiveAgent/screenshot/ReactivaAgentAgainstRandomAgent.PNG}
+  \caption{The performance comparison between Reactive Agent ({\color{blue}Blue}) and Random Agent ({\color{red}Red})}
+  \label{fig:ReactivaAgentAgainstRandomAgent}
+ \end{center}
+\end{figure}
+
+As shown in Figure \ref{fig:ReactivaAgentAgainstRandomAgent}, our reactive agent outperforms the random agent significantly. The average rewards harvested by our reactive agent still converges to 0.65, the random agent could only get 0.53 units of reward per kilometer.
+
+\end{document}
