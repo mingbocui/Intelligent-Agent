@@ -1,4 +1,4 @@
-package template;
+package deliberative_rla;
 
 /* import table */
 import logist.simulation.Vehicle;
