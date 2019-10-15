@@ -1,8 +1,11 @@
 package deliberative_rla;
 
+import logist.task.Task;
 import logist.task.TaskSet;
 import logist.topology.Topology;
 import logist.topology.Topology.City;
+
+import java.util.List;
 
 public class State {
 
@@ -12,4 +15,9 @@ public class State {
     private double carriedWeight; // the weight of all tasks, which could not exceed the capacity of the vehicle
     private TaskSet taskSet; // all tasks carried by the vehicle
 
+    private List<Task> currentTasks;
+
+    public double currentTaskWeights() {
+        currentTasks.stream().collect(...) // sum it up
+    }
 }
