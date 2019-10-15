@@ -10,7 +10,6 @@ import java.util.*;
 
 public class BFSAlgorithm implements IAlgorithm {
     private int depthLimit;
-    private SearchTree tree;
     private int capacity;
     private long costPerKm;
     
@@ -18,7 +17,6 @@ public class BFSAlgorithm implements IAlgorithm {
         this.capacity = capacity;
         this.depthLimit = depthLimit;
         this.costPerKm = costPerKm;
-        this.tree = new SearchTree();
     }
     
     /**
@@ -44,7 +42,6 @@ public class BFSAlgorithm implements IAlgorithm {
         }
         
         var rootState = new State(startingCity);
-        tree = new SearchTree(rootState);
         
         var allStates = new HashSet<State>();
         var statesToProcess = new ArrayList<State>();

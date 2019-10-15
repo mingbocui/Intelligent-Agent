@@ -119,12 +119,15 @@ public class State {
         
         if (diverged) {
             while (otherIter.hasNext()) {
+                // TODO don't know if this is correct
                 if (otherIter.next().getClass() != Action.Move.class) {
                     return false;
                 }
             }
+            
+            return true;
         }
         
-        return true;
+        return false;
     }
 }
