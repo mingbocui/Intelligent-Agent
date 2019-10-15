@@ -13,7 +13,7 @@
 	<agent name="deliberative-main">
 		<set class-path="bin/"/>
 		<set class-name="deliberative_rla.DeliberativeAgent"/>
-		<set depth-limit="10"/>
+		<set depth-limit="4"/>
 		<set algorithm="BFS"/>
 	</agent>
 </agents>

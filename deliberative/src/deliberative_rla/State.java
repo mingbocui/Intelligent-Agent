@@ -6,10 +6,7 @@ import logist.task.Task;
 import logist.topology.Topology.City;
 
 import java.sql.Array;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class State {
     public City city; // the city where the Vehicle locates now
@@ -54,10 +51,10 @@ public class State {
         newState.currentTasks.stream().filter(t -> t.deliveryCity == city).forEach(t -> {
             newState.plan.appendDelivery(t);
             newState.completedTasks.add(t);
-            
         });
     
         newState.currentTasks.removeIf(t -> t.deliveryCity == city);
+        //System.out.println("dropping of tasks, I carry now " + newState.currentTasks.size());
         return newState;
     }
     
@@ -65,6 +62,22 @@ public class State {
         State s = new State(this);
         s.currentTasks.add(task);
         s.plan.appendPickup(task);
+    
+        //System.out.println("picking up task, now I carry " + s.currentTasks.size());
+        
+        return s;
+    }
+    
+    public State pickUp(Set<Task> tasks, long capacity) {
+        State s = new State(this);
+        for (final var t : tasks) {
+            if (s.currentTaskWeights() + t.weight <= capacity
+                    && !s.completedTasks.contains(t)
+                    && !s.currentTasks.contains(t)) {
+                s.currentTasks.add(t);
+                s.plan.appendPickup(t);
+            }
+        }
         
         return s;
     }
@@ -94,6 +107,7 @@ public class State {
         return Objects.hash(this.completedTasks, this.currentTasks, this.city);
     }
     
+    // This is the check for the circle.
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;

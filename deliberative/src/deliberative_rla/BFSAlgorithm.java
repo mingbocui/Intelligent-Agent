@@ -7,6 +7,8 @@ import logist.topology.Topology;
 import logist.topology.Topology.City;
 
 import java.util.*;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 public class BFSAlgorithm implements IAlgorithm {
     private int depthLimit;
@@ -43,6 +45,8 @@ public class BFSAlgorithm implements IAlgorithm {
         
         var rootState = new State(startingCity);
         
+        // TODO optimisation idea: store only the new states or states that have collected and distributed all tasks
+        // -> otherwise they still need to move -> circle detection needs to be done inside of state
         var allStates = new HashSet<State>();
         var statesToProcess = new ArrayList<State>();
         statesToProcess.add(rootState);
@@ -51,12 +55,16 @@ public class BFSAlgorithm implements IAlgorithm {
         
         // 1. building tree
         
-        // TODO add depthLimit
-        while (!statesToProcess.isEmpty()) {
+        // TODO currently this get's us a timeout
+        long reachedDepth = 0;
+        // either we don't have new states to process or
+        // we reached the max search depth, but not we haven't found a solution which haven't delivered eveything.
+        while (!statesToProcess.isEmpty()
+                && (reachedDepth < this.depthLimit
+                    || allStates.stream().noneMatch(s -> s.completedTasks.containsAll(newTasks)))) {
             // there are two steps
             // 1. decide to pick anything up
             // 2. decide where to move
-            var nextStatesToProcess = new ArrayList<State>();
             var pickedUpStates = new ArrayList<State>();
             
             for (final var state : statesToProcess) {
@@ -68,20 +76,18 @@ public class BFSAlgorithm implements IAlgorithm {
                 // picking up multiple tasks -> TODO create product(tasks), including the empty set (no picking up)
                 // easiest to create a list of possible tasks to pick up, then filter them (if totalNewWeight <= capacity)
                 if (tasksPerCity.containsKey(state.city)) {
-                    for (final var task : tasksPerCity.get(state.city)) {
-                        // We do not allow:
+                    for (final var selectedTasks : Utils.powerSet(new LinkedHashSet<>(tasksPerCity.get(state.city)))) {
+                        // We do not allow (done in state.pickup):
                         //  - picking up a task that does not fit the capacity
                         //  - already completed tasks
                         //  - already picked up tasks
-                        if (state.currentTaskWeights() + task.weight <= this.capacity
-                                && !state.completedTasks.contains(task)
-                                && !state.currentTasks.contains(task)) {
-                            pickedUpStates.add(state.pickUp(task));
-                        }
+                        // In case we can't generate a new state, we're going to filter it out later.
+                        pickedUpStates.add(state.pickUp(selectedTasks, this.capacity));
                     }
                 }
             }
-            
+    
+            var nextStatesToProcess = new ArrayList<State>();
             for (final var state: pickedUpStates) {
                 for (final var neighbor: state.city.neighbors()) {
                     nextStatesToProcess.add(state.moveTo(neighbor));
@@ -89,13 +95,28 @@ public class BFSAlgorithm implements IAlgorithm {
             }
             
             // remove the circles
+            System.out.print("in depth " + reachedDepth + " new states pre / post circle detection " + nextStatesToProcess.size() + " / ");
             nextStatesToProcess.removeIf(allStates::contains);
-            allStates.addAll(nextStatesToProcess);
+            System.out.println(nextStatesToProcess.size());
+            // TODO super aggressive optim
+            allStates = new HashSet<>(nextStatesToProcess);
+            //allStates.addAll(nextStatesToProcess);
             statesToProcess = nextStatesToProcess;
+            reachedDepth += 1;
+            
+            System.out.println("In depth " + reachedDepth + ", total nb of states: " + allStates.size());
         }
+    
+    
+        var statesWhichTakeAll = allStates.stream().filter(newTasks::contains).collect(Collectors.toList());
+        var longestPath = allStates.stream().max(Comparator.comparing(s -> s.pathTaken.size()));
         
+        
+        System.out.println("Out of the loop in depth " + reachedDepth + ", total nb of states: " + allStates.size());
         // 2. getting best path
-        var theChosenOne = allStates.stream().filter(s -> s.completedTasks.containsAll(newTasks)).max(Comparator.comparing(s -> s.profit(this.costPerKm)));
+        var theChosenOneV0 = allStates.stream().filter(s -> s.completedTasks.containsAll(newTasks)).max(Comparator.comparing(s -> s.profit(this.costPerKm)));
+        var theChosenOne = allStates.stream().max(Comparator.comparing(s -> s.profit(this.costPerKm)));
+        System.out.println("he has a profit of " + theChosenOne.get().profit(this.costPerKm));
         
         if (theChosenOne.isPresent()) {
             return theChosenOne.get().plan;
