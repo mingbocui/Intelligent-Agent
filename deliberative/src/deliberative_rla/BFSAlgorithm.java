@@ -36,9 +36,6 @@ public class BFSAlgorithm implements IAlgorithm {
      */
     @Override
     public Plan optimalPlan(City startingCity, TaskSet carryingTasks, TaskSet newTasks) {
-        // TODO add nodes to tree etc...
-        // TODO circle detection maybe inside of SearchTree?
-        
         if (!carryingTasks.isEmpty()) {
             throw new IllegalArgumentException("carryingtasks is currently not supported");
         }
@@ -68,12 +65,10 @@ public class BFSAlgorithm implements IAlgorithm {
             var pickedUpStates = new ArrayList<State>();
             
             for (final var state : statesToProcess) {
-                // picking up, if total weight allows it
-                
-                // only picking up a single item for now
-                pickedUpStates.add(state); // do not pick anything up
+                // 1. do not pick anything up
+                pickedUpStates.add(state);
     
-                // picking up multiple tasks -> TODO create product(tasks), including the empty set (no picking up)
+                // 2. picking up multiple tasks is possible, by taking the power-set
                 // easiest to create a list of possible tasks to pick up, then filter them (if totalNewWeight <= capacity)
                 if (tasksPerCity.containsKey(state.city)) {
                     for (final var selectedTasks : Utils.powerSet(new LinkedHashSet<>(tasksPerCity.get(state.city)))) {
@@ -90,6 +85,10 @@ public class BFSAlgorithm implements IAlgorithm {
             var nextStatesToProcess = new ArrayList<State>();
             for (final var state: pickedUpStates) {
                 for (final var neighbor: state.city.neighbors()) {
+                    // TODO add circle detection here, propose the move
+                    // if(!state.wouldMoveInACircle(neighbor)) {
+                    //    nextStatesToProcess.add(state.moveTo(neighbor));
+                    //}
                     nextStatesToProcess.add(state.moveTo(neighbor));
                 }
             }
@@ -98,7 +97,7 @@ public class BFSAlgorithm implements IAlgorithm {
             System.out.print("in depth " + reachedDepth + " new states pre / post circle detection " + nextStatesToProcess.size() + " / ");
             nextStatesToProcess.removeIf(allStates::contains);
             System.out.println(nextStatesToProcess.size());
-            // TODO super aggressive optim
+            // TODO super aggressive optim, but we probably remove too many states, check the other optim comment above
             allStates = new HashSet<>(nextStatesToProcess);
             //allStates.addAll(nextStatesToProcess);
             statesToProcess = nextStatesToProcess;

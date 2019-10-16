@@ -104,7 +104,8 @@ public class State {
     // .equals() method in which we look for a path
     @Override
     public int hashCode() {
-        return Objects.hash(this.completedTasks, this.currentTasks, this.city);
+        //return Objects.hash(this.completedTasks, this.currentTasks, this.city);
+        return Objects.hash(this.currentTasks, this.city);
     }
     
     // This is the check for the circle.
@@ -133,7 +134,6 @@ public class State {
         
         if (diverged) {
             while (otherIter.hasNext()) {
-                // TODO don't know if this is correct
                 if (otherIter.next().getClass() != Action.Move.class) {
                     return false;
                 }

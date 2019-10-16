@@ -12,11 +12,6 @@ import logist.task.TaskSet;
 import logist.topology.Topology;
 import logist.topology.Topology.City;
 
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.Set;
-import java.util.TreeSet;
-
 /**
  * An optimal planner for one vehicle.
  */
@@ -44,27 +39,6 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 		// initialize the planner
 		int capacity = agent.vehicles().get(0).capacity();
 		String algorithmName = agent.readProperty("algorithm", String.class, "ASTAR");
-		
-		// TODO both do not all we want, we want [A, B] -> [A], [B], [A, B], [B, A]
-		// since the order might be important, given the weight constraint
-		System.out.println("Power set test ");
-		Set<Integer> mySet = new LinkedHashSet<>();
-		mySet.add(1);
-		mySet.add(2);
-		mySet.add(3);
-		for (Set<Integer> s : Utils.powerSet(mySet)) {
-			System.out.println(s);
-		}
-		System.out.println("next");
-		Set<Character> set = new LinkedHashSet<>();
-		for(int i = 0; i < 3; i++)
-			set.add((char) (i + 'A'));
-		
-		PowerSet<Character> pset = new PowerSet<Character>(set);
-		for(Set<Character> s:pset)
-		{
-			System.out.println(s);
-		}
 		
 		// Throws IllegalArgumentException if algorithm is unknown
 		switch (EAlgorithm.valueOf(algorithmName.toUpperCase())) {
