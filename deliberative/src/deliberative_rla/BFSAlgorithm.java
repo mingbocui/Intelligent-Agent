@@ -48,6 +48,7 @@ public class BFSAlgorithm implements IAlgorithm {
         var statesToProcess = new ArrayList<State>();
         statesToProcess.add(rootState);
     
+        // TODO move the powerset computation here
         HashMap<Topology.City, ArrayList<Task>> tasksPerCity = Utils.taskPerCity(newTasks);
         
         // 1. building tree
@@ -56,21 +57,23 @@ public class BFSAlgorithm implements IAlgorithm {
         long reachedDepth = 0;
         // either we don't have new states to process or
         // we reached the max search depth, but not we haven't found a solution which haven't delivered eveything.
+        long prevStateSize = -1;
         while (!statesToProcess.isEmpty()
                 && (reachedDepth < this.depthLimit
-                    || allStates.stream().noneMatch(s -> s.completedTasks.containsAll(newTasks)))) {
+                    || allStates.stream().noneMatch(s -> s.completedTasks.containsAll(newTasks)))
+                && prevStateSize != allStates.size()) {
             // there are two steps
             // 1. decide to pick anything up
             // 2. decide where to move
-            var pickedUpStates = new ArrayList<State>();
-            
-            for (final var state : statesToProcess) {
-                // 1. do not pick anything up
-                pickedUpStates.add(state);
     
-                // 2. picking up multiple tasks is possible, by taking the power-set
-                // easiest to create a list of possible tasks to pick up, then filter them (if totalNewWeight <= capacity)
+            // 1. do not pick anything up
+            var pickedUpStates = new ArrayList<State>(statesToProcess);
+            
+            // 2. picking something up
+            for (final var state : statesToProcess) {
+                // 2. picking up multiple tasks is possible -> take the power-set of available tasks
                 if (tasksPerCity.containsKey(state.city)) {
+                    // TODO moving powerset computation from here to above
                     for (final var selectedTasks : Utils.powerSet(new LinkedHashSet<>(tasksPerCity.get(state.city)))) {
                         // We do not allow (done in state.pickup):
                         //  - picking up a task that does not fit the capacity
@@ -97,9 +100,11 @@ public class BFSAlgorithm implements IAlgorithm {
             //System.out.println(nextStatesToProcess.size());
             // TODO super aggressive optim, but we probably remove too many states, check the other optim comment above
             //allStates = new HashSet<>(nextStatesToProcess);
+            prevStateSize = allStates.size();
             allStates.addAll(nextStatesToProcess);
             statesToProcess = nextStatesToProcess;
             reachedDepth += 1;
+            
             
             System.out.println("In depth " + reachedDepth + ", total nb of states: " + allStates.size() + " new states to check: " + nextStatesToProcess.size());
         }

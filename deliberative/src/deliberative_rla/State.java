@@ -145,8 +145,9 @@ public class State {
         if (this == obj) return true;
         if (!(obj instanceof State)) return false;
         State state = (State) obj;
-        
-        // just a sanity check, should not be necessary
+    
+        // just sanity checks, should not be necessary
+        if (this.city != state.city) return false;
         if (this.hashCode() != state.hashCode()) return false;
         
         // TODO look for a path overlap
@@ -154,6 +155,7 @@ public class State {
         // check if rest is just moving
         var thisIter = plan.iterator();
         var otherIter = state.plan.iterator();
+        
         
         boolean diverged = false;
         while (thisIter.hasNext() && otherIter.hasNext()) {
