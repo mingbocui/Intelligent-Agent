@@ -112,7 +112,7 @@ public class State {
     }
     
     public long costOfTravel(long costPerKm) {
-        if (this.pathTaken.size() <= 2) {
+        if (this.pathTaken.size() <= 1) {
             return 0;
         }
         
