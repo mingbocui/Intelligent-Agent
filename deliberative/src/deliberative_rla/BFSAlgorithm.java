@@ -61,7 +61,16 @@ public class BFSAlgorithm implements IAlgorithm {
                     .collect(Collectors.toCollection(ArrayList::new));
             
             System.out.print("in depth " + reachedDepth + " new states pre / post circle & duplicate detection " + nextStatesToProcess.size() + " / ");
-            nextStatesToProcess.removeIf(allStates::contains); // remove duplicates and circles
+    
+            // remove duplicates and circles
+            if (nextStatesToProcess.size() >= 500000 || allStates.size() > 40000) {
+                nextStatesToProcess = nextStatesToProcess.parallelStream()
+                        .filter(s -> !allStates.contains(s))
+                        .collect(Collectors.toCollection(ArrayList::new));
+            } else {
+                nextStatesToProcess.removeIf(allStates::contains);
+            }
+            
             System.out.println(nextStatesToProcess.size());
             
             allStates.addAll(nextStatesToProcess);
