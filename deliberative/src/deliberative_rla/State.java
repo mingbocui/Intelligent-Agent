@@ -120,7 +120,7 @@ public class State {
         if (this.hashCode() != state.hashCode()) return false;
         
         // basically equal
-        return this.constructPlan().totalDistance() == state.constructPlan().totalDistance();
+        return this.constructPlan().totalDistance() < state.constructPlan().totalDistance();
         /*
         
         // find divergence in path

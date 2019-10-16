@@ -112,7 +112,7 @@ public class BFSAlgorithm implements IAlgorithm {
                 .filter(s -> s.completedTasks.containsAll(newTasks))
                 .max(Comparator.comparing(s -> s.profit(this.costPerKm)));
         
-        System.out.println("Took " + (Duration.between(startTime, LocalDateTime.now())) + " to run BFS");
+        System.out.println("Took " + Utils.humanReadableFormat(Duration.between(startTime, LocalDateTime.now())) + " to run BFS");
         
         if (theChosenOne.isPresent()) {
             System.out.println("he has a profit of " + theChosenOne.get().profit(this.costPerKm));

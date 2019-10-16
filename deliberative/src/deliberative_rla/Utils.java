@@ -7,6 +7,7 @@ import logist.task.TaskSet;
 import logist.topology.Topology;
 import logist.topology.Topology.City;
 
+import java.time.Duration;
 import java.util.*;
 
 public class Utils {
@@ -106,4 +107,10 @@ public class Utils {
         return false;
     }
     
+    public static String humanReadableFormat(Duration duration) {
+        return duration.toString()
+                .substring(2)
+                .replaceAll("(\\d[HMS])(?!$)", "$1 ")
+                .toLowerCase();
+    }
 }
