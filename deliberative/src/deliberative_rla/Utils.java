@@ -1,5 +1,6 @@
 package deliberative_rla;
 
+import logist.plan.Action;
 import logist.plan.Plan;
 import logist.task.Task;
 import logist.task.TaskSet;
@@ -45,5 +46,18 @@ public class Utils {
             sets.add(set);
         }
         return sets;
+    }
+    
+    public static ArrayList<Action> planAsList(Plan plan) {
+        var planAsList = new ArrayList<Action>();
+        plan.forEach(planAsList::add);
+        return planAsList;
+    }
+    
+    public static String getCityString(Action.Move moveAction) {
+        // it's always `Move (" + destination + ")`
+        var s = moveAction.toString();
+        
+        return s.substring(6, s.length() - 1);
     }
 }

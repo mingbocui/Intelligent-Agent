@@ -7,6 +7,7 @@ import logist.topology.Topology.City;
 
 import java.sql.Array;
 import java.util.*;
+import java.util.stream.StreamSupport;
 
 public class State {
     public City city; // the city where the Vehicle locates now
@@ -14,6 +15,8 @@ public class State {
     public List<City> pathTaken; // includes origin
     public List<Task> completedTasks;
     public Plan plan;
+    private Integer _hash; // storing the hash, as the members above are "final" (not enforced)
+                           // we don't need to recompute the hash every time
     
     public State(City currentCity) {
         this.currentTasks = new ArrayList<>();
@@ -40,6 +43,32 @@ public class State {
     
     public int currentTaskWeights() {
         return currentTasks.stream().mapToInt(t -> t.weight).sum();
+    }
+    
+    private boolean stupidCircle(ArrayList<Action> plan, int begin, int end) {
+        return plan.subList(begin, end).stream().allMatch(a -> a instanceof Action.Move);
+    }
+    
+    public boolean wouldMoveInACircle(City proposedCity) {
+        if (city != proposedCity) return false;
+        
+        ArrayList<Action> planAsList = Utils.planAsList(plan);
+        planAsList.add(new Action.Move(proposedCity));
+    
+        for (int i = 0; i < planAsList.size(); i++) {
+            if (planAsList.get(i) instanceof Action.Move) {
+                Action.Move move = (Action.Move)planAsList.get(i);
+                String currentCity = Utils.getCityString(move);
+                // possible circle
+                if (currentCity.equals(proposedCity.toString())) {
+                    if (stupidCircle(planAsList, i, planAsList.size())) {
+                        return true;
+                    }
+                }
+            }
+        }
+        
+        return false;
     }
     
     public State moveTo(City city) {
@@ -104,8 +133,10 @@ public class State {
     // .equals() method in which we look for a path
     @Override
     public int hashCode() {
-        //return Objects.hash(this.completedTasks, this.currentTasks, this.city);
-        return Objects.hash(this.currentTasks, this.city);
+        if (this._hash == null) {
+            this._hash = Objects.hash(this.currentTasks, this.city);
+        }
+        return this._hash;
     }
     
     // This is the check for the circle.
@@ -144,4 +175,5 @@ public class State {
         
         return false;
     }
+    
 }

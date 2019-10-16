@@ -4,6 +4,7 @@ package deliberative_rla;
 
 import logist.agent.Agent;
 import logist.behavior.DeliberativeBehavior;
+import logist.plan.Action;
 import logist.plan.Plan;
 import logist.simulation.Vehicle;
 import logist.task.Task;
@@ -11,6 +12,8 @@ import logist.task.TaskDistribution;
 import logist.task.TaskSet;
 import logist.topology.Topology;
 import logist.topology.Topology.City;
+
+import java.util.Random;
 
 /**
  * An optimal planner for one vehicle.
@@ -35,6 +38,8 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 		this.topology = topology;
 		this.td = td;
 		this.agent = agent;
+		
+		System.out.println("trying out city extraction " + Utils.getCityString(new Action.Move(topology.randomCity(new Random()))));
 		
 		// initialize the planner
 		int capacity = agent.vehicles().get(0).capacity();

@@ -85,21 +85,19 @@ public class BFSAlgorithm implements IAlgorithm {
             var nextStatesToProcess = new ArrayList<State>();
             for (final var state: pickedUpStates) {
                 for (final var neighbor: state.city.neighbors()) {
-                    // TODO add circle detection here, propose the move
-                    // if(!state.wouldMoveInACircle(neighbor)) {
-                    //    nextStatesToProcess.add(state.moveTo(neighbor));
-                    //}
-                    nextStatesToProcess.add(state.moveTo(neighbor));
+                    if (!state.wouldMoveInACircle(neighbor)) {
+                        nextStatesToProcess.add(state.moveTo(neighbor));
+                    }
                 }
             }
             
             // remove the circles
-            System.out.print("in depth " + reachedDepth + " new states pre / post circle detection " + nextStatesToProcess.size() + " / ");
-            nextStatesToProcess.removeIf(allStates::contains);
-            System.out.println(nextStatesToProcess.size());
+            //System.out.print("in depth " + reachedDepth + " new states pre / post circle detection " + nextStatesToProcess.size() + " / ");
+            //nextStatesToProcess.removeIf(allStates::contains);
+            //System.out.println(nextStatesToProcess.size());
             // TODO super aggressive optim, but we probably remove too many states, check the other optim comment above
-            allStates = new HashSet<>(nextStatesToProcess);
-            //allStates.addAll(nextStatesToProcess);
+            //allStates = new HashSet<>(nextStatesToProcess);
+            allStates.addAll(nextStatesToProcess);
             statesToProcess = nextStatesToProcess;
             reachedDepth += 1;
             
