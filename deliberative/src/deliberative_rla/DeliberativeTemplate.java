@@ -1,10 +1,11 @@
 package deliberative_rla;
 
 /* import table */
-import logist.simulation.Vehicle;
+
 import logist.agent.Agent;
 import logist.behavior.DeliberativeBehavior;
 import logist.plan.Plan;
+import logist.simulation.Vehicle;
 import logist.task.Task;
 import logist.task.TaskDistribution;
 import logist.task.TaskSet;
@@ -16,8 +17,8 @@ import logist.topology.Topology.City;
  */
 @SuppressWarnings("unused")
 public class DeliberativeTemplate implements DeliberativeBehavior {
-
-    enum Algorithm { BFS, ASTAR }
+    
+    enum Algorithm {BFS, ASTAR}
     
     /* Environment */
     Topology topology;
@@ -26,7 +27,7 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
     /* the properties of the agent */
     Agent agent;
     int capacity;
-
+    
     /* the planning class */
     Algorithm algorithm;
     
@@ -49,19 +50,19 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
     @Override
     public Plan plan(Vehicle vehicle, TaskSet tasks) {
         Plan plan;
-
+        
         // Compute the plan with the selected algorithm.
         switch (algorithm) {
-        case ASTAR:
-            // ...
-            plan = naivePlan(vehicle, tasks);
-            break;
-        case BFS:
-            // ...
-            plan = naivePlan(vehicle, tasks);
-            break;
-        default:
-            throw new AssertionError("Should not happen.");
+            case ASTAR:
+                // ...
+                plan = naivePlan(vehicle, tasks);
+                break;
+            case BFS:
+                // ...
+                plan = naivePlan(vehicle, tasks);
+                break;
+            default:
+                throw new AssertionError("Should not happen.");
         }
         return plan;
     }
@@ -69,26 +70,26 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
     private Plan naivePlan(Vehicle vehicle, TaskSet tasks) {
         City current = vehicle.getCurrentCity();
         Plan plan = new Plan(current);
-
+        
         for (Task task : tasks) {
             // move: current city => pickup location
             for (City city : current.pathTo(task.pickupCity))
                 plan.appendMove(city);
-
+            
             plan.appendPickup(task);
-
+            
             // move: pickup location => delivery location
             for (City city : task.path())
                 plan.appendMove(city);
-
+            
             plan.appendDelivery(task);
-
+            
             // set current city
             current = task.deliveryCity;
         }
         return plan;
     }
-
+    
     @Override
     public void planCancelled(TaskSet carriedTasks) {
         

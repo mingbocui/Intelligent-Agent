@@ -3,11 +3,10 @@ package deliberative_rla;
 import logist.plan.Action;
 import logist.plan.Plan;
 import logist.task.Task;
+import logist.task.TaskSet;
 import logist.topology.Topology.City;
 
-import java.sql.Array;
 import java.util.*;
-import java.util.stream.StreamSupport;
 
 public class State {
     public City city; // the city where the Vehicle locates now
@@ -27,6 +26,11 @@ public class State {
         this.plan = new Plan(currentCity);
     }
     
+    public State(City startingCity, TaskSet carryingTasks) {
+        this(startingCity);
+        this.currentTasks.addAll(carryingTasks);
+    }
+    
     public State(State other) {
         // we need to make a copy, the elements themselves are final
         city = other.city;
@@ -41,6 +45,7 @@ public class State {
         }
     }
     
+    
     public int currentTaskWeights() {
         return currentTasks.stream().mapToInt(t -> t.weight).sum();
     }
@@ -51,15 +56,15 @@ public class State {
     
     public boolean movesInACircle() {
         if (pathTaken.size() < 2) {
-           return false;
+            return false;
         }
         ArrayList<Action> planAsList = Utils.planAsList(plan);
         // adding a dummy start
         planAsList.add(0, new Action.Move(this.pathTaken.get(0)));
-    
+        
         for (int i = 0; i < planAsList.size(); i++) {
             if (planAsList.get(i) instanceof Action.Move) {
-                Action.Move move = (Action.Move)planAsList.get(i);
+                Action.Move move = (Action.Move) planAsList.get(i);
                 String currentCity = Utils.getCityString(move);
                 // possible circle
                 if (currentCity.equals(this.city.toString())) {
@@ -78,13 +83,13 @@ public class State {
         State newState = new State(this);
         newState.pathTaken.add(city);
         newState.city = city;
-    
+        
         newState.plan.appendMove(city);
         newState.currentTasks.stream().filter(t -> t.deliveryCity == city).forEach(t -> {
             newState.plan.appendDelivery(t);
             newState.completedTasks.add(t);
         });
-    
+        
         newState.currentTasks.removeIf(t -> t.deliveryCity == city);
         //System.out.println("dropping of tasks, I carry now " + newState.currentTasks.size());
         return newState;
@@ -94,7 +99,7 @@ public class State {
         State s = new State(this);
         s.currentTasks.add(task);
         s.plan.appendPickup(task);
-    
+        
         //System.out.println("picking up task, now I carry " + s.currentTasks.size());
         
         return s;
@@ -120,7 +125,7 @@ public class State {
         }
         
         long cost = 0;
-    
+        
         for (int i = 1; i < this.pathTaken.size(); i++) {
             cost += this.pathTaken.get(i - 1).distanceTo(this.pathTaken.get(i)) * costPerKm;
         }
@@ -148,18 +153,17 @@ public class State {
         if (this == obj) return true;
         if (!(obj instanceof State)) return false;
         State state = (State) obj;
-    
+        
         // just sanity checks, should not be necessary
         if (this.city != state.city) return false;
         if (this.hashCode() != state.hashCode()) return false;
         
-        // TODO look for a path overlap
         // find divergence in path
         // check if rest is just moving
         var thisIter = plan.iterator();
         var otherIter = state.plan.iterator();
         
-        
+        // FYI: we're exploiting the order of the comparison
         boolean diverged = false;
         while (thisIter.hasNext() && otherIter.hasNext()) {
             if (!thisIter.next().equals(otherIter.next())) {

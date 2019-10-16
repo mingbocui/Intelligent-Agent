@@ -8,16 +8,14 @@ import java.util.TreeSet;
 /**
  * @author st0le
  * https://stackoverflow.com/a/3078491
- *
  */
-public class PowerSet<E> implements Iterator<Set<E>>,Iterable<Set<E>>{
+public class PowerSet<E> implements Iterator<Set<E>>, Iterable<Set<E>> {
     private E[] arr = null;
     private BitSet bset = null;
     
     @SuppressWarnings("unchecked")
-    public PowerSet(Set<E> set)
-    {
-        arr = (E[])set.toArray();
+    public PowerSet(Set<E> set) {
+        arr = (E[]) set.toArray();
         bset = new BitSet(arr.length + 1);
     }
     
@@ -29,19 +27,16 @@ public class PowerSet<E> implements Iterator<Set<E>>,Iterable<Set<E>>{
     @Override
     public Set<E> next() {
         Set<E> returnSet = new TreeSet<E>();
-        for(int i = 0; i < arr.length; i++)
-        {
-            if(bset.get(i))
+        for (int i = 0; i < arr.length; i++) {
+            if (bset.get(i))
                 returnSet.add(arr[i]);
         }
         //increment bset
-        for(int i = 0; i < bset.size(); i++)
-        {
-            if(!bset.get(i))
-            {
+        for (int i = 0; i < bset.size(); i++) {
+            if (!bset.get(i)) {
                 bset.set(i);
                 break;
-            }else
+            } else
                 bset.clear(i);
         }
         

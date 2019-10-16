@@ -4,7 +4,6 @@ package deliberative_rla;
 
 import logist.agent.Agent;
 import logist.behavior.DeliberativeBehavior;
-import logist.plan.Action;
 import logist.plan.Plan;
 import logist.simulation.Vehicle;
 import logist.task.Task;
@@ -13,13 +12,11 @@ import logist.task.TaskSet;
 import logist.topology.Topology;
 import logist.topology.Topology.City;
 
-import java.util.Random;
-
 /**
  * An optimal planner for one vehicle.
  */
 public class DeliberativeAgent implements DeliberativeBehavior {
-    enum EAlgorithm { BFS, ASTAR }
+    enum EAlgorithm {BFS, ASTAR}
     
     /* Environment */
     Topology topology;
@@ -27,7 +24,7 @@ public class DeliberativeAgent implements DeliberativeBehavior {
     
     /* the properties of the agent */
     Agent agent;
-
+    
     IAlgorithm algorithm;
     
     
@@ -77,33 +74,33 @@ public class DeliberativeAgent implements DeliberativeBehavior {
         } else {
             plan = this.algorithm.optimalPlan(vehicle.getCurrentCity(), vehicle.getCurrentTasks(), tasks);
         }
-
+        
         return plan;
     }
     
     private Plan naivePlan(Vehicle vehicle, TaskSet tasks) {
         City current = vehicle.getCurrentCity();
         Plan plan = new Plan(current);
-
+        
         for (Task task : tasks) {
             // move: current city => pickup location
             for (City city : current.pathTo(task.pickupCity))
                 plan.appendMove(city);
-
+            
             plan.appendPickup(task);
-
+            
             // move: pickup location => delivery location
             for (City city : task.path())
                 plan.appendMove(city);
-
+            
             plan.appendDelivery(task);
-
+            
             // set current city
             current = task.deliveryCity;
         }
         return plan;
     }
-
+    
     @Override
     public void planCancelled(TaskSet carriedTasks) {
         

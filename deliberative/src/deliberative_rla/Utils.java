@@ -19,10 +19,10 @@ public class Utils {
                 map.put(task.pickupCity, new ArrayList<>(Arrays.asList(task)));
             }
         }
-    
+        
         var powerMap = new HashMap<Topology.City, Set<Set<Task>>>();
         
-        for (final var entry : map.entrySet()){
+        for (final var entry : map.entrySet()) {
             powerMap.put(entry.getKey(), Utils.powerSet(new LinkedHashSet<>(entry.getValue())));
         }
         
@@ -31,6 +31,7 @@ public class Utils {
     
     /**
      * source: https://stackoverflow.com/a/1670871
+     *
      * @param originalSet
      * @param <T>
      * @return
