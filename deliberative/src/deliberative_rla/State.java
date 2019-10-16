@@ -7,7 +7,6 @@ import logist.task.Task;
 import logist.task.TaskSet;
 import logist.topology.Topology.City;
 
-import java.lang.reflect.Array;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -16,7 +15,7 @@ public class State {
     public City initialCity;
     public List<Task> currentTasks;
     public List<Task> completedTasks;
-    public List<Action> plan;
+    public ArrayList<Action> plan;
     private Integer _hash; // storing the hash, as the members above are "final" (not enforced)
     // we don't need to recompute the hash every time
     
@@ -50,40 +49,6 @@ public class State {
     
     public Plan constructPlan() {
         return new Plan(initialCity, plan);
-    }
-    
-    private boolean stupidCircle(int begin) {
-        return plan.subList(begin, plan.size()).stream().allMatch(a -> a instanceof Action.Move);
-    }
-    
-    
-    /**
-     * Checks if the state is currently moving in a circle without purpose.
-     * @return
-     */
-    public boolean movesInACircle() {
-        if (plan.size() < 2) {
-            return false;
-        }
-        
-        if (initialCity == city) {
-            return stupidCircle(0);
-        }
-        
-        String currentCity = initialCity.toString();
-        for (int i = 0; i < plan.size(); i++) {
-            if (plan.get(i) instanceof Action.Move) {
-                currentCity = Utils.getCityString(plan.get(i));
-            } else {
-                if (currentCity.equals(city.toString())
-                        && i + 1 < plan.size()
-                        && stupidCircle(i + 1)) {
-                    return true;
-                }
-            }
-        }
-        
-        return false;
     }
     
     public State moveTo(City city) {
@@ -120,8 +85,9 @@ public class State {
         
         State s = new State(this);
         s.plan.addAll(tasks.stream()
-                .map(Delivery::new)
+                .map(Pickup::new)
                 .collect(Collectors.toList()));
+        s.currentTasks.addAll(tasks);
         
         return s;
     }
@@ -130,12 +96,12 @@ public class State {
         return this.completedTasks.stream().mapToLong(t -> t.reward).sum() - constructPlan().totalDistance() * costPerKm ;
     }
     
-    /*
     // This is being done for the circle detection. We want an hash-collision in the HashSet, this will then trigger the
     // .equals() method in which we look for a path
     @Override
     public int hashCode() {
-        return Objects.hash(this.constructPlan());
+        //return this.plan.hashCode();
+        return Objects.hash(this.completedTasks, this.currentTasks, this.city);
         //if (this._hash == null) {
         //    this._hash = Objects.hash(this.completedTasks, this.currentTasks, this.city);
         //}
@@ -152,6 +118,10 @@ public class State {
         // just sanity checks, should not be necessary
         if (this.city != state.city) return false;
         if (this.hashCode() != state.hashCode()) return false;
+        
+        // basically equal
+        return this.constructPlan().totalDistance() == state.constructPlan().totalDistance();
+        /*
         
         // find divergence in path
         // check if rest is just moving
@@ -178,8 +148,7 @@ public class State {
         }
         
         return false;
+        
+         */
     }
-    
-     */
-    
 }

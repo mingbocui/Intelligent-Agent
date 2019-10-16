@@ -39,18 +39,17 @@ public class DeliberativeAgent implements DeliberativeBehavior {
         this.td = td;
         this.agent = agent;
         
-        var dummyState = new State(topology.parseCity("Genève"))
+        var dummyState = Utils.hasUselessCircle(new State(topology.parseCity("Genève"))
                 .moveTo(topology.parseCity("Lausanne"))
                 .moveTo(topology.parseCity("Neuchâtel"))
                 .moveTo(topology.parseCity("Bern"))
-                .pickUp(Set.of(new Task(0,
-                        topology.parseCity("Bern"),
-                        topology.parseCity("Lausanne"),
-                        2,
-                        1 )), 100)
+                //.pickUp(Set.of(new Task(0,
+                //        topology.parseCity("Bern"),
+                //        topology.parseCity("Lausanne"),
+                //        2,
+                //        1 )), 100)
                 .moveTo(topology.parseCity("Fribourg"))
-                .moveTo(topology.parseCity("Lausanne"))
-                .movesInACircle();
+                .moveTo(topology.parseCity("Lausanne")));
         System.out.println("does it detect the circle? " + dummyState);
         
         // initialize the planner

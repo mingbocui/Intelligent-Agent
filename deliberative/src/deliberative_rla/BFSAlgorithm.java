@@ -40,7 +40,7 @@ public class BFSAlgorithm implements IAlgorithm {
     public Plan optimalPlan(City startingCity, TaskSet carryingTasks, TaskSet newTasks) {
         // TODO optimisation idea: store only the new states or states that have collected and distributed all tasks
         var allStates = new HashSet<State>();
-        var statesToProcess = new ArrayList<>(Arrays.asList(new State(startingCity, carryingTasks)));
+        var statesToProcess = new HashSet<>(Set.of(new State(startingCity, carryingTasks)));
         
         // this includes the power set of the available tasks
         HashMap<Topology.City, Set<Set<Task>>> tasksPerCity = Utils.taskPerCity(newTasks);
@@ -55,18 +55,24 @@ public class BFSAlgorithm implements IAlgorithm {
             var pickedUpStates = statesToProcess.parallelStream()
                     .filter(s -> tasksPerCity.containsKey(s.city))
                     .flatMap(s -> tasksPerCity.get(s.city).stream()
-                            .map(ts -> s.pickUp(ts, this.capacity)))
-                    .collect(Collectors.toCollection(ArrayList::new));
+                            .filter(ts -> !ts.isEmpty()) // due to the above filter, we could also have filled tasksPerCity with empty lists...
+                            .map(ts -> s.pickUp(ts, this.capacity))
+                            .filter(Objects::nonNull))
+                    .collect(Collectors.toSet());
+    
+            System.out.println("new pick up states " + pickedUpStates.size());
             
             // 1.2. don't pick anything up
             pickedUpStates.addAll(statesToProcess);
+    
+            System.out.println("new with up states " + pickedUpStates.size());
             
             // 2. moving to a new city
             var nextStatesToProcess = pickedUpStates.parallelStream()
                     .flatMap(s -> s.city.neighbors().stream()
                             .map(s::moveTo)
-                            .filter(ns -> !ns.movesInACircle()))
-                    .collect(Collectors.toCollection(ArrayList::new));
+                            .filter(ns -> !Utils.hasUselessCircle(ns)))
+                    .collect(Collectors.toSet());
     
             var dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
             System.out.print(">>> " + dtf.format(LocalDateTime.now()) + " >>> in depth " + reachedDepth
@@ -77,7 +83,7 @@ public class BFSAlgorithm implements IAlgorithm {
             if (nextStatesToProcess.size() >= 500000 || allStates.size() > 40000) { // just some heuristics... could be faster
                 nextStatesToProcess = nextStatesToProcess.parallelStream()
                         .filter(s -> !allStates.contains(s))
-                        .collect(Collectors.toCollection(ArrayList::new));
+                        .collect(Collectors.toSet());
             } else {
                 nextStatesToProcess.removeIf(allStates::contains);
             }
@@ -89,10 +95,11 @@ public class BFSAlgorithm implements IAlgorithm {
             allStates.addAll(nextStatesToProcess);
     
             // we don't need to spawn new states originating from these ones
+            //statesToProcess = new HashSet<>(nextStatesToProcess);
             statesToProcess = nextStatesToProcess.parallelStream()
                     .filter(s -> !s.completedTasks.containsAll(newTasks))
-                    .collect(Collectors.toCollection(ArrayList::new));
-            
+                    .collect(Collectors.toCollection(HashSet::new));
+    
             reachedDepth += 1;
             
             System.out.println("In depth " + reachedDepth + ", total nb of states: " + allStates.size() + " new states to check: " + nextStatesToProcess.size());
