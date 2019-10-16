@@ -93,7 +93,7 @@ public class BFSAlgorithm implements IAlgorithm {
             
             // remove the circles
             //System.out.print("in depth " + reachedDepth + " new states pre / post circle detection " + nextStatesToProcess.size() + " / ");
-            //nextStatesToProcess.removeIf(allStates::contains);
+            nextStatesToProcess.removeIf(allStates::contains); // remove duplicates and circles
             //System.out.println(nextStatesToProcess.size());
             // TODO super aggressive optim, but we probably remove too many states, check the other optim comment above
             //allStates = new HashSet<>(nextStatesToProcess);
@@ -101,7 +101,7 @@ public class BFSAlgorithm implements IAlgorithm {
             statesToProcess = nextStatesToProcess;
             reachedDepth += 1;
             
-            System.out.println("In depth " + reachedDepth + ", total nb of states: " + allStates.size());
+            System.out.println("In depth " + reachedDepth + ", total nb of states: " + allStates.size() + " new states to check: " + nextStatesToProcess.size());
         }
     
     
