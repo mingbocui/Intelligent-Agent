@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="default" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="logist.LogistPlatform" />
+    <module name="deliberative" />
+    <option name="PROGRAM_PARAMETERS" value="config/deliberative.xml deliberative-main" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
