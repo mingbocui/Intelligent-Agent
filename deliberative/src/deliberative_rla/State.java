@@ -4,7 +4,9 @@ import logist.plan.Action;
 import logist.plan.Plan;
 import logist.task.Task;
 import logist.task.TaskSet;
+import logist.topology.Topology;
 import logist.topology.Topology.City;
+
 
 import java.util.*;
 
@@ -132,6 +134,33 @@ public class State {
         
         return cost;
     }
+
+    public long AstarHeuristic(State currState, State nextState, long costPerKm){
+
+        var cost = (long)(currState.city.distanceTo(nextState.city) + nextState.currentTasks.stream().mapToDouble(t -> t.pickupCity.distanceTo(t.deliveryCity)).sum())*costPerKm;
+        cost -= nextState.currentTasks.stream().mapToLong(t -> t.reward).sum();//nett cost = cost - reward
+        return cost;
+    }
+
+    public State Astar(long costPerKm){
+        //TODO shallow copy or deep copy? confused!
+        State bestState = new State(this);//maybe stupid
+        State currState = this;
+        long minCost = Long.MAX_VALUE;
+        long cost;
+        for(City neighbourCity : currState.city.neighbors()){
+            cost = AstarHeuristic(currState, currState.moveTo(neighbourCity), costPerKm);
+            if(cost < minCost){
+                minCost = cost;
+                bestState = currState.moveTo(neighbourCity);
+            }
+        }
+        return bestState;
+
+    }
+
+
+
     
     public long profit(long costPerKm) {
         return this.completedTasks.stream().mapToLong(t -> t.reward).sum() - this.costOfTravel(costPerKm);

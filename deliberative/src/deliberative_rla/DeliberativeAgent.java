@@ -53,7 +53,8 @@ public class DeliberativeAgent implements DeliberativeBehavior {
         // Throws IllegalArgumentException if algorithm is unknown
         switch (EAlgorithm.valueOf(algorithmName.toUpperCase())) {
             case ASTAR:
-                this.algorithm = new AStarAlgorithm();
+                this.algorithm = new AStarAlgorithm(capacity,
+                        this.agent.vehicles().get(0).costPerKm());
                 break;
             case BFS:
                 this.depthLimit = agent.readProperty("depth-limit", Integer.class, 10);
