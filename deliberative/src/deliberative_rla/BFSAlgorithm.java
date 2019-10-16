@@ -45,8 +45,7 @@ public class BFSAlgorithm implements IAlgorithm {
         // TODO optimisation idea: store only the new states or states that have collected and distributed all tasks
         // -> otherwise they still need to move -> circle detection needs to be done inside of state
         var allStates = new HashSet<State>();
-        var statesToProcess = new ArrayList<State>();
-        statesToProcess.add(rootState);
+        var statesToProcess = new ArrayList<State>(Arrays.asList(rootState));
     
         // TODO move the powerset computation here
         HashMap<Topology.City, ArrayList<Task>> tasksPerCity = Utils.taskPerCity(newTasks);
@@ -58,10 +57,10 @@ public class BFSAlgorithm implements IAlgorithm {
         // either we don't have new states to process or
         // we reached the max search depth, but not we haven't found a solution which haven't delivered eveything.
         long prevStateSize = -1;
-        while (!statesToProcess.isEmpty()
-                && (reachedDepth < this.depthLimit
-                    || allStates.stream().noneMatch(s -> s.completedTasks.containsAll(newTasks)))
-                && prevStateSize != allStates.size()) {
+        while (!statesToProcess.isEmpty()){
+                //&& (reachedDepth < this.depthLimit
+                //    || allStates.stream().noneMatch(s -> s.completedTasks.containsAll(newTasks)))
+                //&& prevStateSize != allStates.size()) {
             // there are two steps
             // 1. decide to pick anything up
             // 2. decide where to move
@@ -85,21 +84,14 @@ public class BFSAlgorithm implements IAlgorithm {
                 }
             }
     
-            var nextStatesToProcess = new ArrayList<State>();
-            for (final var state: pickedUpStates) {
-                for (final var neighbor: state.city.neighbors()) {
-                    if (!state.wouldMoveInACircle(neighbor)) {
-                        nextStatesToProcess.add(state.moveTo(neighbor));
-                    }
-                }
-            }
-            
+            var nextStatesToProcess = pickedUpStates.parallelStream()
+                    .flatMap(s -> s.city.neighbors().stream().map(s::moveTo).filter(ns -> !ns.movesInACircle()))
+                    .collect(Collectors.toCollection(ArrayList::new));
+    
             // remove the circles
-            //System.out.print("in depth " + reachedDepth + " new states pre / post circle detection " + nextStatesToProcess.size() + " / ");
+            System.out.print("in depth " + reachedDepth + " new states pre / post circle detection " + nextStatesToProcess.size() + " / ");
             nextStatesToProcess.removeIf(allStates::contains); // remove duplicates and circles
-            //System.out.println(nextStatesToProcess.size());
-            // TODO super aggressive optim, but we probably remove too many states, check the other optim comment above
-            //allStates = new HashSet<>(nextStatesToProcess);
+            System.out.println(nextStatesToProcess.size());
             prevStateSize = allStates.size();
             allStates.addAll(nextStatesToProcess);
             statesToProcess = nextStatesToProcess;
@@ -109,15 +101,13 @@ public class BFSAlgorithm implements IAlgorithm {
             System.out.println("In depth " + reachedDepth + ", total nb of states: " + allStates.size() + " new states to check: " + nextStatesToProcess.size());
         }
     
-    
-        var statesWhichTakeAll = allStates.stream().filter(newTasks::contains).collect(Collectors.toList());
-        var longestPath = allStates.stream().max(Comparator.comparing(s -> s.pathTaken.size()));
-        
+        //var statesWhichTakeAll = allStates.stream().filter(newTasks::contains).collect(Collectors.toList());
+        //var longestPath = allStates.stream().max(Comparator.comparing(s -> s.pathTaken.size()));
         
         System.out.println("Out of the loop in depth " + reachedDepth + ", total nb of states: " + allStates.size());
         // 2. getting best path
-        var theChosenOneV0 = allStates.stream().filter(s -> s.completedTasks.containsAll(newTasks)).max(Comparator.comparing(s -> s.profit(this.costPerKm)));
-        var theChosenOne = allStates.stream().max(Comparator.comparing(s -> s.profit(this.costPerKm)));
+        var theChosenOne = allStates.stream().filter(s -> s.completedTasks.containsAll(newTasks)).max(Comparator.comparing(s -> s.profit(this.costPerKm)));
+        //var theChosenOne = allStates.stream().max(Comparator.comparing(s -> s.profit(this.costPerKm)));
         System.out.println("he has a profit of " + theChosenOne.get().profit(this.costPerKm));
         
         if (theChosenOne.isPresent()) {

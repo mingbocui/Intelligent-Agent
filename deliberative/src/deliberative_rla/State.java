@@ -49,19 +49,22 @@ public class State {
         return plan.subList(begin, end).stream().allMatch(a -> a instanceof Action.Move);
     }
     
-    public boolean wouldMoveInACircle(City proposedCity) {
-        if (city != proposedCity) return false;
-        
+    public boolean movesInACircle() {
+        if (pathTaken.size() < 2) {
+           return false;
+        }
         ArrayList<Action> planAsList = Utils.planAsList(plan);
-        planAsList.add(new Action.Move(proposedCity));
+        // adding a dummy start
+        planAsList.add(0, new Action.Move(this.pathTaken.get(0)));
     
         for (int i = 0; i < planAsList.size(); i++) {
             if (planAsList.get(i) instanceof Action.Move) {
                 Action.Move move = (Action.Move)planAsList.get(i);
                 String currentCity = Utils.getCityString(move);
                 // possible circle
-                if (currentCity.equals(proposedCity.toString())) {
-                    if (stupidCircle(planAsList, i, planAsList.size())) {
+                if (currentCity.equals(this.city.toString())) {
+                    // at least two actions
+                    if (planAsList.size() - i > 2 && stupidCircle(planAsList, i, planAsList.size())) {
                         return true;
                     }
                 }
