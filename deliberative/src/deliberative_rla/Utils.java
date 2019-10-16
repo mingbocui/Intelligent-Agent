@@ -61,10 +61,13 @@ public class Utils {
         return planAsList;
     }
     
-    public static String getCityString(Action.Move moveAction) {
-        // it's always `Move (" + destination + ")`
-        var s = moveAction.toString();
-        
-        return s.substring(6, s.length() - 1);
+    public static String getCityString(Action moveAction) {
+        if (moveAction instanceof Action.Move) {
+            // it's always `Move (" + destination + ")`
+            var s = moveAction.toString();
+    
+            return s.substring(6, s.length() - 1);
+        }
+        throw new IllegalArgumentException("can't call this on a not move-action");
     }
 }

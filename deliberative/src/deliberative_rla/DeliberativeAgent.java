@@ -12,6 +12,9 @@ import logist.task.TaskSet;
 import logist.topology.Topology;
 import logist.topology.Topology.City;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * An optimal planner for one vehicle.
  */
@@ -36,15 +39,19 @@ public class DeliberativeAgent implements DeliberativeBehavior {
         this.td = td;
         this.agent = agent;
         
-        //var dummyState = new State(topology.parseCity("Genève"))
-        //        .moveTo(topology.parseCity("Lausanne"))
-        //        .moveTo(topology.parseCity("Neuchâtel"))
-        //        .moveTo(topology.parseCity("Bern"))
-        //        .pickUp(new Task(0, topology.parseCity("Bern"), topology.parseCity("Lausanne"), 2, 1 ))
-        //        .moveTo(topology.parseCity("Fribourg"))
-        //        .moveTo(topology.parseCity("Lausanne"))
-        //        .movesInACircle();
-        //System.out.println("does it detect the circle? " + dummyState);
+        var dummyState = new State(topology.parseCity("Genève"))
+                .moveTo(topology.parseCity("Lausanne"))
+                .moveTo(topology.parseCity("Neuchâtel"))
+                .moveTo(topology.parseCity("Bern"))
+                .pickUp(Set.of(new Task(0,
+                        topology.parseCity("Bern"),
+                        topology.parseCity("Lausanne"),
+                        2,
+                        1 )), 100)
+                .moveTo(topology.parseCity("Fribourg"))
+                .moveTo(topology.parseCity("Lausanne"))
+                .movesInACircle();
+        System.out.println("does it detect the circle? " + dummyState);
         
         // initialize the planner
         int capacity = agent.vehicles().get(0).capacity();
