@@ -48,7 +48,7 @@ public class BFSAlgorithm implements IAlgorithm {
         var statesToProcess = new ArrayList<State>(Arrays.asList(rootState));
     
         // TODO move the powerset computation here
-        HashMap<Topology.City, ArrayList<Task>> tasksPerCity = Utils.taskPerCity(newTasks);
+        HashMap<Topology.City, Set<Set<Task>>> tasksPerCity = Utils.taskPerCity(newTasks);
         
         // 1. building tree
         
@@ -65,31 +65,22 @@ public class BFSAlgorithm implements IAlgorithm {
             // 1. decide to pick anything up
             // 2. decide where to move
     
-            // 1. do not pick anything up
-            var pickedUpStates = new ArrayList<State>(statesToProcess);
+            var pickedUpStates = statesToProcess.parallelStream()
+                    .filter(s -> tasksPerCity.containsKey(s.city))
+                    .flatMap(s -> tasksPerCity.get(s.city).stream()
+                            .map(ts -> s.pickUp(ts, this.capacity)))
+                    .collect(Collectors.toCollection(ArrayList::new));
             
-            // 2. picking something up
-            for (final var state : statesToProcess) {
-                // 2. picking up multiple tasks is possible -> take the power-set of available tasks
-                if (tasksPerCity.containsKey(state.city)) {
-                    // TODO moving powerset computation from here to above
-                    for (final var selectedTasks : Utils.powerSet(new LinkedHashSet<>(tasksPerCity.get(state.city)))) {
-                        // We do not allow (done in state.pickup):
-                        //  - picking up a task that does not fit the capacity
-                        //  - already completed tasks
-                        //  - already picked up tasks
-                        // In case we can't generate a new state, we're going to filter it out later.
-                        pickedUpStates.add(state.pickUp(selectedTasks, this.capacity));
-                    }
-                }
-            }
+            pickedUpStates.addAll(statesToProcess);
     
             var nextStatesToProcess = pickedUpStates.parallelStream()
-                    .flatMap(s -> s.city.neighbors().stream().map(s::moveTo).filter(ns -> !ns.movesInACircle()))
+                    .flatMap(s -> s.city.neighbors().stream()
+                            .map(s::moveTo)
+                            .filter(ns -> !ns.movesInACircle()))
                     .collect(Collectors.toCollection(ArrayList::new));
     
             // remove the circles
-            System.out.print("in depth " + reachedDepth + " new states pre / post circle detection " + nextStatesToProcess.size() + " / ");
+            System.out.print("in depth " + reachedDepth + " new states pre / post circle & duplicate detection " + nextStatesToProcess.size() + " / ");
             nextStatesToProcess.removeIf(allStates::contains); // remove duplicates and circles
             System.out.println(nextStatesToProcess.size());
             prevStateSize = allStates.size();

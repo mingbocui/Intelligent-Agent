@@ -9,7 +9,7 @@ import logist.topology.Topology;
 import java.util.*;
 
 public class Utils {
-    public static HashMap<Topology.City, ArrayList<Task>> taskPerCity(TaskSet tasks) {
+    public static HashMap<Topology.City, Set<Set<Task>>> taskPerCity(TaskSet tasks) {
         var map = new HashMap<Topology.City, ArrayList<Task>>();
         
         for (final var task : tasks) {
@@ -19,8 +19,14 @@ public class Utils {
                 map.put(task.pickupCity, new ArrayList<>(Arrays.asList(task)));
             }
         }
+    
+        var powerMap = new HashMap<Topology.City, Set<Set<Task>>>();
         
-        return map;
+        for (final var entry : map.entrySet()){
+            powerMap.put(entry.getKey(), Utils.powerSet(new LinkedHashSet<>(entry.getValue())));
+        }
+        
+        return powerMap;
     }
     
     /**
