@@ -72,7 +72,7 @@ public class AStarAlgorithm implements IAlgorithm {
 
         if (theChosenOne.isPresent()) {
             System.out.println("he has a profit of " + theChosenOne.get().profit(this.costPerKm));
-            return theChosenOne.get().plan;
+            return theChosenOne.get().constructPlan();
         } else {
             throw new IllegalStateException("woops");
         }
