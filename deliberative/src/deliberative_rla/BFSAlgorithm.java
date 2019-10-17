@@ -13,13 +13,11 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class BFSAlgorithm implements IAlgorithm {
-    private int depthLimit;
     private int capacity;
     private long costPerKm;
     
-    public BFSAlgorithm(int capacity, long costPerKm, int depthLimit) {
+    public BFSAlgorithm(int capacity, long costPerKm) {
         this.capacity = capacity;
-        this.depthLimit = depthLimit;
         this.costPerKm = costPerKm;
     }
     

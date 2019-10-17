@@ -2,7 +2,7 @@
 
 <agents>
 	<!-- A list of agents and their behavior classes -->
-	
+
 	<!-- #### DELIBERATIVE AGENTS ### -->
 	<agent name="deliberative-random">
 		<set class-path="bin/"/>
@@ -13,7 +13,6 @@
 	<agent name="deliberative-main">
 		<set class-path="bin/"/>
 		<set class-name="deliberative_rla.DeliberativeAgent"/>
-		<set depth-limit="4"/>
 		<set algorithm="BFS"/>
 	</agent>
 </agents>

@@ -49,30 +49,19 @@ public class DeliberativeAgent implements DeliberativeBehavior {
         // Throws IllegalArgumentException if algorithm is unknown
         switch (EAlgorithm.valueOf(algorithmName.toUpperCase())) {
             case ASTAR:
-                this.algorithm = new AStarAlgorithm(capacity,
-                        this.agent.vehicles().get(0).costPerKm());
+                this.algorithm = new AStarAlgorithm(capacity, this.agent.vehicles().get(0).costPerKm());
                 break;
             case BFS:
-                this.depthLimit = agent.readProperty("depth-limit", Integer.class, 10);
-                this.algorithm = new BFSAlgorithm(capacity,
-                        this.agent.vehicles().get(0).costPerKm(),
-                        this.depthLimit);
+                this.algorithm = new BFSAlgorithm(capacity, this.agent.vehicles().get(0).costPerKm());
                 break;
+            default:
+                throw new IllegalArgumentException("no such algorithm known");
         }
     }
     
     @Override
     public Plan plan(Vehicle vehicle, TaskSet tasks) {
-        Plan plan;
-        
-        // TODO after AStar is implemented, we only need the code from BFS `this.algorithm.optimalPlan(...)`
-        if (algorithm instanceof AStarAlgorithm) {
-            plan = naivePlan(vehicle, tasks);
-        } else {
-            plan = this.algorithm.optimalPlan(vehicle.getCurrentCity(), vehicle.getCurrentTasks(), tasks);
-        }
-        
-        return plan;
+        return this.algorithm.optimalPlan(vehicle.getCurrentCity(), vehicle.getCurrentTasks(), tasks);
     }
     
     private Plan naivePlan(Vehicle vehicle, TaskSet tasks) {
