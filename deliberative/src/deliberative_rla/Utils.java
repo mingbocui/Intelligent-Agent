@@ -5,7 +5,9 @@ import logist.plan.Plan;
 import logist.task.Task;
 import logist.task.TaskSet;
 import logist.topology.Topology;
+import logist.topology.Topology.City;
 
+import java.time.Duration;
 import java.util.*;
 
 public class Utils {
@@ -61,10 +63,54 @@ public class Utils {
         return planAsList;
     }
     
-    public static String getCityString(Action.Move moveAction) {
-        // it's always `Move (" + destination + ")`
-        var s = moveAction.toString();
+    public static String getCityString(Action moveAction) {
+        if (moveAction instanceof Action.Move) {
+            // it's always `Move (" + destination + ")`
+            var s = moveAction.toString();
+            
+            return s.substring(6, s.length() - 1);
+        }
+        throw new IllegalArgumentException("can't call this on a not move-action");
+    }
+    
+    private static boolean stupidCircle(ArrayList<Action> plan, int begin) {
+        return plan.subList(begin, plan.size())
+                .stream()
+                .allMatch(a -> a instanceof Action.Move);
+    }
+    
+    public static boolean hasUselessCircle(State ns) {
+        return hasUselessCircle(ns.initialCity, ns.city, ns.plan);
+    }
+    
+    public static boolean hasUselessCircle(City initialCity, City currentCity, ArrayList<Action> actions) {
+        if (actions.size() < 2) {
+            return false;
+        }
         
-        return s.substring(6, s.length() - 1);
+        String visiting = initialCity.toString();
+        
+        if (visiting.equals(currentCity.toString()) && stupidCircle(actions, 0)) return true;
+        
+        for (int i = 0; i < actions.size(); i++) {
+            if (actions.get(i) instanceof Action.Move) {
+                visiting = Utils.getCityString(actions.get(i));
+            }
+            // check if rest is only moves, if current city is equal to old
+            if (visiting.equals(currentCity.toString())
+                    && i + 1 < actions.size()
+                    && stupidCircle(actions, i + 1)) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    public static String humanReadableFormat(Duration duration) {
+        return duration.toString()
+                .substring(2)
+                .replaceAll("(\\d[HMS])(?!$)", "$1 ")
+                .toLowerCase();
     }
 }

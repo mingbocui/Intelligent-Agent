@@ -12,6 +12,10 @@ import logist.task.TaskSet;
 import logist.topology.Topology;
 import logist.topology.Topology.City;
 
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 /**
  * An optimal planner for one vehicle.
  */
@@ -27,7 +31,6 @@ public class DeliberativeAgent implements DeliberativeBehavior {
     
     IAlgorithm algorithm;
     
-    
     private int depthLimit;
     
     @Override
@@ -36,15 +39,8 @@ public class DeliberativeAgent implements DeliberativeBehavior {
         this.td = td;
         this.agent = agent;
         
-        //var dummyState = new State(topology.parseCity("Genève"))
-        //        .moveTo(topology.parseCity("Lausanne"))
-        //        .moveTo(topology.parseCity("Neuchâtel"))
-        //        .moveTo(topology.parseCity("Bern"))
-        //        .pickUp(new Task(0, topology.parseCity("Bern"), topology.parseCity("Lausanne"), 2, 1 ))
-        //        .moveTo(topology.parseCity("Fribourg"))
-        //        .moveTo(topology.parseCity("Lausanne"))
-        //        .movesInACircle();
-        //System.out.println("does it detect the circle? " + dummyState);
+        // running some tests
+        tests();
         
         // initialize the planner
         int capacity = agent.vehicles().get(0).capacity();
@@ -110,5 +106,39 @@ public class DeliberativeAgent implements DeliberativeBehavior {
             // you will need to consider the carriedTasks when the next
             // plan is computed.
         }
+    }
+    
+    private void tests() {
+        var longerPath = new State(topology.parseCity("Lausanne"))
+                .moveTo(topology.parseCity("Sion"))
+                .moveTo(topology.parseCity("Thun"))
+                .moveTo(topology.parseCity("Bern"));
+        
+        var shorterPath = new State(topology.parseCity("Lausanne"))
+                .moveTo(topology.parseCity("Fribourg"))
+                .moveTo(topology.parseCity("Bern"));
+        
+        // we don't want to add longer plans with the same result
+        assert new HashSet<>(Set.of(shorterPath)).contains(longerPath);
+        var testSet = new HashSet<>(Set.of(longerPath));
+        // we want to find shorter solutions, so this should be added
+        assert testSet.contains(shorterPath);
+        testSet.add(shorterPath);
+        System.out.println("what is returned by the shortpath now? " + testSet.contains(shorterPath) + " "
+                + " the longer path? " + testSet.contains(longerPath) + " "
+                + testSet.stream().filter(t -> t.equals(shorterPath)).collect(Collectors.toList()));
+        
+        var dummyState = Utils.hasUselessCircle(new State(topology.parseCity("Genève"))
+                .moveTo(topology.parseCity("Lausanne"))
+                .moveTo(topology.parseCity("Neuchâtel"))
+                .moveTo(topology.parseCity("Bern"))
+                //.pickUp(Set.of(new Task(0,
+                //        topology.parseCity("Bern"),
+                //        topology.parseCity("Lausanne"),
+                //        2,
+                //        1 )), 100)
+                .moveTo(topology.parseCity("Fribourg"))
+                .moveTo(topology.parseCity("Lausanne")));
+        System.out.println("does it detect the circle? " + dummyState);
     }
 }

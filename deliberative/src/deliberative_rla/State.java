@@ -1,6 +1,9 @@
 package deliberative_rla;
 
 import logist.plan.Action;
+import logist.plan.Action.Delivery;
+import logist.plan.Action.Move;
+import logist.plan.Action.Pickup;
 import logist.plan.Plan;
 import logist.task.Task;
 import logist.task.TaskSet;
@@ -9,23 +12,22 @@ import logist.topology.Topology.City;
 
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class State {
     public City city; // the city where the Vehicle locates now
+    public City initialCity;
     public List<Task> currentTasks;
-    public List<City> pathTaken; // includes origin
     public List<Task> completedTasks;
-    public Plan plan;
-    private Integer _hash; // storing the hash, as the members above are "final" (not enforced)
-                           // we don't need to recompute the hash every time
+    public ArrayList<Action> plan;
     
     public State(City currentCity) {
         this.currentTasks = new ArrayList<>();
-        this.pathTaken = new ArrayList<>(Arrays.asList(currentCity));
         this.completedTasks = new ArrayList<>();
         
+        this.initialCity = currentCity;
         this.city = currentCity;
-        this.plan = new Plan(currentCity);
+        this.plan = new ArrayList<>();
     }
     
     public State(City startingCity, TaskSet carryingTasks) {
@@ -35,16 +37,11 @@ public class State {
     
     public State(State other) {
         // we need to make a copy, the elements themselves are final
+        initialCity = other.initialCity;
         city = other.city;
-        pathTaken = new ArrayList<>(other.pathTaken);
+        plan = new ArrayList<>(other.plan);
         currentTasks = new ArrayList<>(other.currentTasks);
         completedTasks = new ArrayList<>(other.completedTasks);
-        
-        // shitty way to copy... uag
-        plan = new Plan(other.pathTaken.get(0));
-        if (other.plan.iterator().hasNext()) {
-            other.plan.forEach(plan::append);
-        }
     }
     
     
@@ -52,87 +49,49 @@ public class State {
         return currentTasks.stream().mapToInt(t -> t.weight).sum();
     }
     
-    private boolean stupidCircle(ArrayList<Action> plan, int begin, int end) {
-        return plan.subList(begin, end).stream().allMatch(a -> a instanceof Action.Move);
-    }
-    
-    public boolean movesInACircle() {
-        if (pathTaken.size() < 2) {
-            return false;
-        }
-        ArrayList<Action> planAsList = Utils.planAsList(plan);
-        // adding a dummy start
-        planAsList.add(0, new Action.Move(this.pathTaken.get(0)));
-        
-        for (int i = 0; i < planAsList.size(); i++) {
-            if (planAsList.get(i) instanceof Action.Move) {
-                Action.Move move = (Action.Move) planAsList.get(i);
-                String currentCity = Utils.getCityString(move);
-                // possible circle
-                if (currentCity.equals(this.city.toString())) {
-                    // at least two actions
-                    if (planAsList.size() - i > 2 && stupidCircle(planAsList, i, planAsList.size())) {
-                        return true;
-                    }
-                }
-            }
-        }
-        
-        return false;
+    public Plan constructPlan() {
+        return new Plan(initialCity, plan);
     }
     
     public State moveTo(City city) {
-        State newState = new State(this);
-        newState.pathTaken.add(city);
-        newState.city = city;
+        State s = new State(this);
         
-        newState.plan.appendMove(city);
-        newState.currentTasks.stream().filter(t -> t.deliveryCity == city).forEach(t -> {
-            newState.plan.appendDelivery(t);
-            newState.completedTasks.add(t);
+        s.plan.add(new Move(city));
+        s.city = city;
+        
+        s.currentTasks.stream().filter(t -> t.deliveryCity == city).forEach(t -> {
+            s.plan.add(new Delivery(t));
+            s.completedTasks.add(t);
         });
-        
-        newState.currentTasks.removeIf(t -> t.deliveryCity == city);
+        s.currentTasks.removeIf(t -> t.deliveryCity == city);
         //System.out.println("dropping of tasks, I carry now " + newState.currentTasks.size());
-        return newState;
+        return s;
     }
     
-    public State pickUp(Task task) {
-        State s = new State(this);
-        s.currentTasks.add(task);
-        s.plan.appendPickup(task);
+    private Set<Task> allTasks() {
+        var r = new HashSet<Task>();
         
-        //System.out.println("picking up task, now I carry " + s.currentTasks.size());
+        r.addAll(currentTasks);
+        r.addAll(completedTasks);
         
-        return s;
+        return r;
     }
     
     public State pickUp(Set<Task> tasks, long capacity) {
-        State s = new State(this);
-        for (final var t : tasks) {
-            if (s.currentTaskWeights() + t.weight <= capacity
-                    && !s.completedTasks.contains(t)
-                    && !s.currentTasks.contains(t)) {
-                s.currentTasks.add(t);
-                s.plan.appendPickup(t);
-            }
+        boolean tooFull = tasks.stream().mapToInt(t -> t.weight).sum() + currentTaskWeights() > capacity;
+        var ats = allTasks();
+        boolean alreadyPickedUp = tasks.stream().anyMatch(ats::contains);
+        if (tooFull || alreadyPickedUp) {
+            return null;
         }
+        
+        State s = new State(this);
+        s.plan.addAll(tasks.stream()
+                .map(Pickup::new)
+                .collect(Collectors.toList()));
+        s.currentTasks.addAll(tasks);
         
         return s;
-    }
-    
-    public long costOfTravel(long costPerKm) {
-        if (this.pathTaken.size() <= 1) {
-            return 0;
-        }
-        
-        long cost = 0;
-        
-        for (int i = 1; i < this.pathTaken.size(); i++) {
-            cost += this.pathTaken.get(i - 1).distanceTo(this.pathTaken.get(i)) * costPerKm;
-        }
-        
-        return cost;
     }
 
     public long AstarHeuristic(State currState, State nextState, long costPerKm){
@@ -162,21 +121,18 @@ public class State {
 
 
     
-    public long profit(long costPerKm) {
-        return this.completedTasks.stream().mapToLong(t -> t.reward).sum() - this.costOfTravel(costPerKm);
+    public double profit(long costPerKm) {
+        return this.completedTasks.stream().mapToLong(t -> t.reward).sum() - constructPlan().totalDistance() * costPerKm;
     }
     
     // This is being done for the circle detection. We want an hash-collision in the HashSet, this will then trigger the
     // .equals() method in which we look for a path
     @Override
     public int hashCode() {
-        if (this._hash == null) {
-            this._hash = Objects.hash(this.currentTasks, this.city);
-        }
-        return this._hash;
+        return Objects.hash(this.completedTasks, this.currentTasks, this.city);
     }
     
-    // This is the check for the circle.
+    // This is the check for the "circle".
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
@@ -187,31 +143,8 @@ public class State {
         if (this.city != state.city) return false;
         if (this.hashCode() != state.hashCode()) return false;
         
-        // find divergence in path
-        // check if rest is just moving
-        var thisIter = plan.iterator();
-        var otherIter = state.plan.iterator();
-        
-        // FYI: we're exploiting the order of the comparison
-        boolean diverged = false;
-        while (thisIter.hasNext() && otherIter.hasNext()) {
-            if (!thisIter.next().equals(otherIter.next())) {
-                diverged = true;
-                break;
-            }
-        }
-        
-        if (diverged) {
-            while (otherIter.hasNext()) {
-                if (otherIter.next().getClass() != Action.Move.class) {
-                    return false;
-                }
-            }
-            
-            return true;
-        }
-        
-        return false;
+        // basically if the plan takes longer to achieve the same, we return equals to trigger a collision,
+        // discarding the new but worse plan.
+        return this.constructPlan().totalDistance() >= state.constructPlan().totalDistance();
     }
-    
 }
