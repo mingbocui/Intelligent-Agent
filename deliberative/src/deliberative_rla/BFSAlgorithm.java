@@ -59,12 +59,12 @@ public class BFSAlgorithm implements IAlgorithm {
                             .map(ts -> s.pickUp(ts, this.capacity))
                             .filter(Objects::nonNull))
                     .collect(Collectors.toSet());
-    
+            
             System.out.println("new pick up states " + pickedUpStates.size());
             
             // 1.2. don't pick anything up
             pickedUpStates.addAll(statesToProcess);
-    
+            
             System.out.println("new with up states " + pickedUpStates.size());
             
             // 2. moving to a new city
@@ -73,33 +73,26 @@ public class BFSAlgorithm implements IAlgorithm {
                             .map(s::moveTo)
                             .filter(ns -> !Utils.hasUselessCircle(ns)))
                     .collect(Collectors.toSet());
-    
+            
             var dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
             System.out.print(">>> " + dtf.format(LocalDateTime.now()) + " >>> in depth " + reachedDepth
                     + " new states pre / post circle & duplicate detection " + nextStatesToProcess.size() + " / ");
-    
+            
             // remove duplicates and circles
-            // still takes a long ass time, around 8' to check 894k states in 284k states...
-            if (nextStatesToProcess.size() >= 500000 || allStates.size() > 40000) { // just some heuristics... could be faster
-                nextStatesToProcess = nextStatesToProcess.parallelStream()
-                        .filter(s -> !allStates.contains(s))
-                        .collect(Collectors.toSet());
-            } else {
-                nextStatesToProcess.removeIf(allStates::contains);
-            }
+            nextStatesToProcess.removeIf(allStates::contains);
             
             System.out.println(nextStatesToProcess.size());
             
             // super aggressive optim
             //allStates.removeIf(s -> !s.completedTasks.containsAll(newTasks));
             allStates.addAll(nextStatesToProcess);
-    
+            
             // we don't need to spawn new states originating from these ones
             //statesToProcess = new HashSet<>(nextStatesToProcess);
             statesToProcess = nextStatesToProcess.parallelStream()
                     .filter(s -> !s.completedTasks.containsAll(newTasks))
                     .collect(Collectors.toCollection(HashSet::new));
-    
+            
             reachedDepth += 1;
             
             System.out.println("In depth " + reachedDepth + ", total nb of states: " + allStates.size() + " new states to check: " + nextStatesToProcess.size());

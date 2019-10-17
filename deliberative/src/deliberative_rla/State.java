@@ -1,7 +1,9 @@
 package deliberative_rla;
 
 import logist.plan.Action;
-import logist.plan.Action.*;
+import logist.plan.Action.Delivery;
+import logist.plan.Action.Move;
+import logist.plan.Action.Pickup;
 import logist.plan.Plan;
 import logist.task.Task;
 import logist.task.TaskSet;
@@ -16,8 +18,6 @@ public class State {
     public List<Task> currentTasks;
     public List<Task> completedTasks;
     public ArrayList<Action> plan;
-    private Integer _hash; // storing the hash, as the members above are "final" (not enforced)
-    // we don't need to recompute the hash every time
     
     public State(City currentCity) {
         this.currentTasks = new ArrayList<>();
@@ -93,7 +93,7 @@ public class State {
     }
     
     public double profit(long costPerKm) {
-        return this.completedTasks.stream().mapToLong(t -> t.reward).sum() - constructPlan().totalDistance() * costPerKm ;
+        return this.completedTasks.stream().mapToLong(t -> t.reward).sum() - constructPlan().totalDistance() * costPerKm;
     }
     
     // This is being done for the circle detection. We want an hash-collision in the HashSet, this will then trigger the
@@ -120,7 +120,7 @@ public class State {
         if (this.hashCode() != state.hashCode()) return false;
         
         // basically equal
-        return this.constructPlan().totalDistance() < state.constructPlan().totalDistance();
+        return this.constructPlan().totalDistance() >= state.constructPlan().totalDistance();
         /*
         
         // find divergence in path

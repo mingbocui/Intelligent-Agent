@@ -67,7 +67,7 @@ public class Utils {
         if (moveAction instanceof Action.Move) {
             // it's always `Move (" + destination + ")`
             var s = moveAction.toString();
-    
+            
             return s.substring(6, s.length() - 1);
         }
         throw new IllegalArgumentException("can't call this on a not move-action");
@@ -87,9 +87,9 @@ public class Utils {
         if (actions.size() < 2) {
             return false;
         }
-    
+        
         String visiting = initialCity.toString();
-    
+        
         if (visiting.equals(currentCity.toString()) && stupidCircle(actions, 0)) return true;
         
         for (int i = 0; i < actions.size(); i++) {
@@ -103,7 +103,7 @@ public class Utils {
                 return true;
             }
         }
-    
+        
         return false;
     }
     
