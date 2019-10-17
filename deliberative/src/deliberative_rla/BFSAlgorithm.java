@@ -38,7 +38,6 @@ public class BFSAlgorithm implements IAlgorithm {
      */
     @Override
     public Plan optimalPlan(City startingCity, TaskSet carryingTasks, TaskSet newTasks) {
-        // TODO optimisation idea: store only the new states or states that have collected and distributed all tasks
         var allStates = new HashSet<State>();
         var statesToProcess = new HashSet<>(Set.of(new State(startingCity, carryingTasks)));
         
@@ -51,23 +50,21 @@ public class BFSAlgorithm implements IAlgorithm {
         
         // 1. build tree
         while (!statesToProcess.isEmpty()) {
-            // 1.1. picking up packages (if available)
+            // 1.1.1. picking up packages (if available)
             var pickedUpStates = statesToProcess.parallelStream()
                     .filter(s -> tasksPerCity.containsKey(s.city))
                     .flatMap(s -> tasksPerCity.get(s.city).stream()
-                            .filter(ts -> !ts.isEmpty()) // due to the above filter, we could also have filled tasksPerCity with empty lists...
+                            // due to the above filter, we could also have filled tasksPerCity with empty lists...
+                            // this should not be necessary, as the set-of-all-tasks should take care of duplicates
+                            .filter(ts -> !ts.isEmpty())
                             .map(ts -> s.pickUp(ts, this.capacity))
                             .filter(Objects::nonNull))
                     .collect(Collectors.toSet());
             
-            System.out.println("new pick up states " + pickedUpStates.size());
-            
-            // 1.2. don't pick anything up
+            // 1.1.2. don't pick anything up
             pickedUpStates.addAll(statesToProcess);
             
-            System.out.println("new with up states " + pickedUpStates.size());
-            
-            // 2. moving to a new city
+            // 1.1.3. moving to a new city
             var nextStatesToProcess = pickedUpStates.parallelStream()
                     .flatMap(s -> s.city.neighbors().stream()
                             .map(s::moveTo)
@@ -78,29 +75,30 @@ public class BFSAlgorithm implements IAlgorithm {
             System.out.print(">>> " + dtf.format(LocalDateTime.now()) + " >>> in depth " + reachedDepth
                     + " new states pre / post circle & duplicate detection " + nextStatesToProcess.size() + " / ");
             
-            // remove duplicates and circles
+            // 1.2.1. remove duplicates and circles
             nextStatesToProcess.removeIf(allStates::contains);
             
             System.out.println(nextStatesToProcess.size());
             
-            // super aggressive optim
-            //allStates.removeIf(s -> !s.completedTasks.containsAll(newTasks));
+            // 1.2.2. keeping track of all new states, used for "circle detection"
+            // Note that our implementation of hashCode and equals has been overwritten, now only states with
+            // a lower cost but same result will be added to the set.
             allStates.addAll(nextStatesToProcess);
             
-            // we don't need to spawn new states originating from these ones
-            //statesToProcess = new HashSet<>(nextStatesToProcess);
+            // 1.2.3. we don't need to spawn new states originating from these ones which already completed all tasks
             statesToProcess = nextStatesToProcess.parallelStream()
                     .filter(s -> !s.completedTasks.containsAll(newTasks))
                     .collect(Collectors.toCollection(HashSet::new));
             
             reachedDepth += 1;
             
-            System.out.println("In depth " + reachedDepth + ", total nb of states: " + allStates.size() + " new states to check: " + nextStatesToProcess.size());
+            System.out.println("In depth " + reachedDepth + ", total nb of states: "
+                    + allStates.size() + " new states to check: " + nextStatesToProcess.size());
         }
         
         System.out.println("Out of the loop in depth " + reachedDepth + ", total nb of states: " + allStates.size());
         
-        // 2. getting best path
+        // 2. getting best plan, taking the one with max profit
         var theChosenOne = allStates.stream()
                 .filter(s -> s.completedTasks.containsAll(newTasks))
                 .max(Comparator.comparing(s -> s.profit(this.costPerKm)));

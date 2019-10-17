@@ -100,15 +100,10 @@ public class State {
     // .equals() method in which we look for a path
     @Override
     public int hashCode() {
-        //return this.plan.hashCode();
         return Objects.hash(this.completedTasks, this.currentTasks, this.city);
-        //if (this._hash == null) {
-        //    this._hash = Objects.hash(this.completedTasks, this.currentTasks, this.city);
-        //}
-        //return this._hash;
     }
     
-    // This is the check for the circle.
+    // This is the check for the "circle".
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
@@ -119,36 +114,8 @@ public class State {
         if (this.city != state.city) return false;
         if (this.hashCode() != state.hashCode()) return false;
         
-        // basically equal
+        // basically if the plan takes longer to achieve the same, we return equals to trigger a collision,
+        // discarding the new but worse plan.
         return this.constructPlan().totalDistance() >= state.constructPlan().totalDistance();
-        /*
-        
-        // find divergence in path
-        // check if rest is just moving
-        var thisIter = plan.iterator();
-        var otherIter = state.plan.iterator();
-        
-        // FYI: we're exploiting the order of the comparison
-        boolean diverged = false;
-        while (thisIter.hasNext() && otherIter.hasNext()) {
-            if (!thisIter.next().equals(otherIter.next())) {
-                diverged = true;
-                break;
-            }
-        }
-        
-        if (diverged) {
-            while (otherIter.hasNext()) {
-                if (otherIter.next().getClass() != Action.Move.class) {
-                    return false;
-                }
-            }
-            
-            return true;
-        }
-        
-        return false;
-        
-         */
     }
 }
