@@ -131,8 +131,6 @@ public class State {
                 .map(Pickup::new)
                 .collect(Collectors.toList()));
 
-
-
         s.currentTasks.addAll(tasks);
         s.unpickedTasks.removeAll(tasks);
         //TODO update AStarDistance
@@ -157,6 +155,10 @@ public class State {
             if(distance > maxDistance) maxDistance = distance;
         }
         return maxDistance;
+    }
+    
+    public boolean hasUselessCircle() {
+        return Utils.hasUselessCircle(this);
     }
 
 //    public static double astarHeuristic(State state, State nextState) {

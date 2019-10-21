@@ -10,6 +10,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class AstarBaseAlgorithm implements IAlgorithm {
@@ -50,65 +51,62 @@ public class AstarBaseAlgorithm implements IAlgorithm {
     public Plan optimalPlan(City startingCity, TaskSet carryingTasks, TaskSet newTasks) {
 
         State initState = new State(startingCity, carryingTasks, newTasks, 0.0);
-//        var allStates = new HashSet<State>();
-        AstarComparator astarComparator = new AstarComparator();
+        var allStates = new HashSet<State>();
         //TODO from the output is unordered, check my implementation of comparator
         // I updated the AStarDistance in the moveTo() and pickUp() also
-        Queue<State> statesToProcess = new PriorityQueue<>(astarComparator);
-        statesToProcess.add(initState);
+        Queue<State> stateQueue = new PriorityQueue<State>(new AstarComparator());
+        stateQueue.add(initState);
 
+        // note that visitedStates will say that it contains the key according to given equal method
+        // check with the tests in DeliberativeAgent to see the examples.
+        // It might be a good choice to provide a new class CircleState or something that does the equals and hashCode
+        // as it is right now, and change the normal hashCode and equals method for State that does only the most basic stuff
         Map<State, Double> visitedStates = new HashMap<>();
 
         // this includes the power set of the available tasks
-        HashMap<Topology.City, Set<Set<Task>>> tasksPerCity = Utils.taskPerCity(newTasks);
-
+        HashMap<City, Set<Set<Task>>> tasksPerCity = Utils.taskPerCity(newTasks);
 
         long reachedDepth = 0;
 
         var startTime = LocalDateTime.now();
 
-        // 1. build tree
-        while (!statesToProcess.isEmpty()) {
-
+        while (!stateQueue.isEmpty()) {
             System.out.println("depth " + reachedDepth + " starts");
-            statesToProcess.stream().forEach(s->{System.out.println(s.getAStarDistance());});
+            //stateQueue.stream().forEach(s->{System.out.println(s.getAStarDistance());});
 
-            State stateIsProcessing = statesToProcess.poll();
-            System.out.println("state located in city " + stateIsProcessing.city.name + " with current tasks " + stateIsProcessing.currentTasks.size()
-                                                        + ", with completed tasks " + stateIsProcessing.completedTasks.size() + ", with unpicked tasks " + stateIsProcessing.unpickedTasks.size());
-            if (stateIsProcessing.completedTasks.containsAll(newTasks))
-                return stateIsProcessing.constructPlan();
+            State currentState = stateQueue.poll();
+            System.out.println("state located in city " + currentState.city.name + " with current tasks " + currentState.currentTasks.size()
+                                                        + ", with completed tasks " + currentState.completedTasks.size() + ", with unpicked tasks " + currentState.unpickedTasks.size());
+            if (currentState.completedTasks.containsAll(newTasks))
+                return currentState.constructPlan();
 
-            // TODO very stupid implementation, just want to deploy the stream()
-            List<State> tempList = new ArrayList<>();
-            tempList.add(stateIsProcessing);
+            // Spawn new states
+            List<State> succ;
+            if (tasksPerCity.containsKey(currentState.city)) {
+                succ = tasksPerCity.get(currentState.city).stream()
+                        .filter(ts -> !ts.isEmpty())
+                        .map(ts -> currentState.pickUp(ts, this.capacity))
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toList());
+                succ.add(currentState);
+            } else {
+                succ = List.of(currentState);
+            }
 
-            var pickedUpStates = tempList.parallelStream()
-                    .filter(s -> tasksPerCity.containsKey(s.city))
-                    .flatMap(s -> tasksPerCity.get(s.city).stream()
-                            // due to the above filter, we could also have filled tasksPerCity with empty lists...
-                            // this should not be necessary, as the set-of-all-tasks should take care of duplicates
-                            .filter(ts -> !ts.isEmpty())
-                            .map(ts -> s.pickUp(ts, this.capacity))
-                            .filter(Objects::nonNull))
-                    .collect(Collectors.toList());
-
-            var nextStatesToProcess = pickedUpStates.parallelStream()
+            succ = succ.stream()
                     .flatMap(s -> s.city.neighbors().stream()
                             .map(s::moveTo)
-                            .filter(ns -> !Utils.hasUselessCircle(ns)))
-                    .collect(Collectors.toCollection(ArrayList::new));
-
-            //TODO not sure
-            //pickedUpStates.addAll(statesToProcess);
-            //TODO the equals function of the state
-            if (!visitedStates.containsKey(stateIsProcessing)) {
-                visitedStates.put(stateIsProcessing, stateIsProcessing.getAStarDistance());
-                statesToProcess.addAll(nextStatesToProcess);
-            }
-            // maintain smaller cost
-            else if(visitedStates.get(stateIsProcessing) >= stateIsProcessing.getAStarDistance()){
-                visitedStates.replace(stateIsProcessing, stateIsProcessing.getAStarDistance());
+                            .filter(Predicate.not(State::hasUselessCircle)))
+                    .collect(Collectors.toList());
+            
+            succ.removeIf(allStates::contains);
+            allStates.addAll(succ);
+            
+            if (!visitedStates.containsKey(currentState)) {
+                visitedStates.put(currentState, currentState.getAStarDistance());
+                stateQueue.addAll(succ);
+            } else if(visitedStates.get(currentState) >= currentState.getAStarDistance()){
+                visitedStates.replace(currentState, currentState.getAStarDistance());
             }
 
             System.out.println("depth " + reachedDepth + " ended \n");

@@ -13,6 +13,6 @@
 	<agent name="deliberative-main">
 		<set class-path="bin/"/>
 		<set class-name="deliberative_rla.DeliberativeAgent"/>
-		<set algorithm="BFS"/>
+		<set algorithm="ASTAR"/>
 	</agent>
 </agents>

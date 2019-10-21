@@ -6,6 +6,7 @@ import java.util.Comparator;
 
 public class AstarComparator implements Comparator<State>{
 
+    // TODO write tests for this, create scenarios
     @Override
     public int compare(State s1, State s2){
         return Double.compare(s1.getAStarDistance(), s2.getAStarDistance());
