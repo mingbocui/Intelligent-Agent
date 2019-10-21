@@ -87,17 +87,26 @@ public class AstarBaseAlgorithm implements IAlgorithm {
 
             // 1.1.3. moving to a new city
             List<State> nextStatesToProcess;
-//            if (this.applyAStar) {
-//                nextStatesToProcess = pickedUpStates.parallelStream()
-//                        .map(s -> AStarAlgorithm.Astar(s, this.costPerKm))
-//                        .collect(Collectors.toCollection(ArrayList::new));
-//            } else {
+            if (this.applyAStar) {
+                nextStatesToProcess = pickedUpStates.parallelStream()
+                        .map(s -> AStarAlgorithm.Astar(s, this.costPerKm))
+                        .collect(Collectors.toCollection(ArrayList::new));
+
+                if(nextStatesToProcess.isEmpty()){
+                    System.out.print("nextStatesToProcess is Empty");
+                }
+                else{
+                    System.out.println("size of nextStatesToProcess " + nextStatesToProcess.size());
+                }
+
+
+            } else {
                 nextStatesToProcess = pickedUpStates.parallelStream()
                         .flatMap(s -> s.city.neighbors().stream()
                                 .map(s::moveTo)
                                 .filter(ns -> !Utils.hasUselessCircle(ns)))
                         .collect(Collectors.toCollection(ArrayList::new));
-//            }
+            }
 
             var dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
             System.out.print(">>> " + dtf.format(LocalDateTime.now()) + " >>> in depth " + reachedDepth
@@ -107,11 +116,11 @@ public class AstarBaseAlgorithm implements IAlgorithm {
             // 1.2.1. remove duplicates and circles
             nextStatesToProcess.removeIf(allStates::contains);
 
-            System.out.println(nextStatesToProcess.size());
 
             // 1.2.2. keeping track of all new states, used for "circle detection"
             // Note that our implementation of hashCode and equals has been overwritten, now only states with
             // a lower cost but same result will be added to the set.
+            statesToProcess.poll();
             allStates.addAll(nextStatesToProcess);
 
             // 1.2.3. we don't need to spawn new states originating from these ones which already completed all tasks
@@ -122,7 +131,12 @@ public class AstarBaseAlgorithm implements IAlgorithm {
 
             // TODO AStar sort next states
                 // statesToProcess is a PriorityQueue, so the it will ordering all the states with order of increasing cost
+//            statesToProcess.removeAll(State);
             statesToProcess.addAll(tempStatesToProcess);
+
+            System.out.println("statesToProcess " + statesToProcess.size());
+
+            if(statesToProcess.size() == 0) break;
 
             reachedDepth += 1;
 

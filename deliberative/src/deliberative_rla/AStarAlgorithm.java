@@ -15,7 +15,7 @@ public class AStarAlgorithm extends AstarBaseAlgorithm {
         // nett cost = cost - reward
 //        return (state.city.distanceTo(nextState.city) + distance_to_all_tasks) * costPerKm -
 //                nextState.currentTasks.stream().mapToDouble(t -> t.reward).sum();
-        return (state.city.distanceTo(nextState.city) + distance_to_all_tasks) * costPerKm;
+        return state.constructPlan().totalDistance() + (state.city.distanceTo(nextState.city) + distance_to_all_tasks) * costPerKm;
     }
 
     public static State Astar(State state, long costPerKm) {
