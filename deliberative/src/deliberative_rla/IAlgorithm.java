@@ -5,7 +5,7 @@ import logist.plan.Plan;
 import logist.task.TaskSet;
 import logist.topology.Topology.City;
 
-public interface IAlgorithm<T extends State> {
+public interface IAlgorithm {
     /**
      * The `carryingTasks` and `newTasks` are split, probably not necessary as we can just "change" the origin of these
      * tasks to be the current city.
@@ -16,6 +16,4 @@ public interface IAlgorithm<T extends State> {
      * @return
      */
     Plan optimalPlan(City startingCity, TaskSet carryingTasks, TaskSet newTasks);
-    
-    T rootState(City startingCity, TaskSet carryingTasks);
 }

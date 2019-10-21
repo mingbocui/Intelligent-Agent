@@ -10,29 +10,24 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-public class BaseAlgorithm<T extends State> implements IAlgorithm {
+public class BaseAlgorithm implements IAlgorithm {
     private int capacity;
     private long costPerKm;
-    private boolean useEarlyStop = true;
     private boolean applyAStar = true;
     
-    public BaseAlgorithm(int capacity, long costPerKm, boolean useEarlyStop, boolean applyAStar) {
+    public BaseAlgorithm(int capacity, long costPerKm, boolean applyAStar) {
         this.capacity = capacity;
         this.costPerKm = costPerKm;
-        this.useEarlyStop = useEarlyStop;
         this.applyAStar = applyAStar;
     }
     
     public BaseAlgorithm(int capacity, long costPerKm) {
-        this(capacity, costPerKm, true, true);
+        this(capacity, costPerKm, true);
     }
-    
-    public BaseAlgorithm(int capacity, long costPerKm, boolean useEarlyStop) {
-        this(capacity, costPerKm, useEarlyStop, true);
-    }
-    
+
     /**
      * The basic idea is:
      * - at each state the agent can:
@@ -48,9 +43,9 @@ public class BaseAlgorithm<T extends State> implements IAlgorithm {
      */
     @Override
     public Plan optimalPlan(City startingCity, TaskSet carryingTasks, TaskSet newTasks) {
-        var allStates = new HashSet<T>();
+        final Set allStates = new HashSet<State>();
         // forcing an order, mostly important for AStar
-        ArrayList<T> statesToProcess = new ArrayList<>(List.of(rootState(startingCity, carryingTasks)));
+        List<State> statesToProcess = List.of(rootState(startingCity, carryingTasks));
         
         // this includes the power set of the available tasks
         HashMap<Topology.City, Set<Set<Task>>> tasksPerCity = Utils.taskPerCity(newTasks);
@@ -67,7 +62,7 @@ public class BaseAlgorithm<T extends State> implements IAlgorithm {
                     .flatMap(s -> tasksPerCity.get(s.city).stream()
                             // due to the above filter, we could also have filled tasksPerCity with empty lists...
                             // this should not be necessary, as the set-of-all-tasks should take care of duplicates
-                            .filter(ts -> !ts.isEmpty())
+                            .filter(Predicate.not(Set::isEmpty))
                             .map(ts -> s.pickUp(ts, this.capacity))
                             .filter(Objects::nonNull))
                     .collect(Collectors.toList());
@@ -80,22 +75,24 @@ public class BaseAlgorithm<T extends State> implements IAlgorithm {
             if (this.applyAStar) {
                 nextStatesToProcess = pickedUpStates.parallelStream()
                         .map(s -> AStarAlgorithm.Astar(s, this.costPerKm))
-                        .collect(Collectors.toCollection(ArrayList::new));
+                        .collect(Collectors.toList());
             } else {
                 nextStatesToProcess = pickedUpStates.parallelStream()
                         .flatMap(s -> s.city.neighbors().stream()
                                 .map(s::moveTo)
                                 .filter(ns -> !Utils.hasUselessCircle(ns)))
-                        .collect(Collectors.toCollection(ArrayList::new));
+                        .collect(Collectors.toList());
             }
             
             var dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
             System.out.print(">>> " + dtf.format(LocalDateTime.now()) + " >>> in depth " + reachedDepth
                     + " new states pre / post circle & duplicate detection " + nextStatesToProcess.size() + " / ");
             
-            // 1.2.1. remove duplicates and circles
-            nextStatesToProcess.removeIf(allStates::contains);
-            
+            // 1.2.1. remove states that achieve the same but take longer, only for A* algorithm
+            if (this.applyAStar) {
+                nextStatesToProcess.removeIf(allStates::contains);
+            }
+
             System.out.println(nextStatesToProcess.size());
             
             // 1.2.2. keeping track of all new states, used for "circle detection"
@@ -118,38 +115,43 @@ public class BaseAlgorithm<T extends State> implements IAlgorithm {
             System.out.println("In depth " + reachedDepth + ", total nb of states: "
                     + allStates.size() + " new states to check: " + nextStatesToProcess.size());
             
-            if (this.useEarlyStop) {
-                var theChosenOne = nextStatesToProcess.stream()
-                        .filter(s -> s.completedTasks.containsAll(newTasks))
-                        .max(Comparator.comparing(s -> s.profit(this.costPerKm)));
-                
-                if (theChosenOne.isPresent()) {
-                    printReport(theChosenOne.get(), reachedDepth, allStates.size(), startTime);
-                    return theChosenOne.get().constructPlan();
-                }
+            var theChosenOne = nextStatesToProcess.stream()
+                    .filter(s -> s.completedTasks.containsAll(newTasks))
+                    .max(Comparator.comparing(s -> s.profit(this.costPerKm)));
+
+            if (theChosenOne.isPresent()) {
+                printReport(theChosenOne.get(), reachedDepth, allStates.size(), startTime);
+                return theChosenOne.get().constructPlan();
             }
         }
-        // reached goal at depth: 14, total nb of states: 401323, took 4.430894s, profit of: 651074.0, using early stopping: true
-        
-        // reached goal at depth: 13, total nb of states: 14048, took 0.607019s, profit of: 254657.0, using early stopping: true
-        // reached goal at depth: 40, total nb of states: 65352, took 2.478753s, profit of: 254657.0, using early stopping: false
+        // reached goal at depth: 13, total nb of states: 979885, took 1.77541s, profit of: 254657.0
         
         // 2. getting best plan, taking the one with max profit
+        // TODO why the fuck does it need the casts down here but in the loop?
         var theChosenOne = allStates.stream()
-                .filter(s -> s.completedTasks.containsAll(newTasks))
-                .max(Comparator.comparing(s -> s.profit(this.costPerKm)));
+                .filter(s -> ((State)s).completedTasks.containsAll(newTasks))
+                .max(Comparator.comparing(s -> ((State)s).profit(this.costPerKm)));
         
         if (theChosenOne.isPresent()) {
-            printReport(theChosenOne.get(), reachedDepth, allStates.size(), startTime);
-            return theChosenOne.get().constructPlan();
+            printReport((State) theChosenOne.get(), reachedDepth, allStates.size(), startTime);
+            return ((State)theChosenOne.get()).constructPlan();
         } else {
             throw new IllegalStateException("woops");
         }
     }
-    
-    @Override
-    public T rootState(City startingCity, TaskSet carryingTasks) {
-        return null;
+
+    /**
+     * used for the check in A* algorithm (not adding states
+     * @param startingCity
+     * @param carryingTasks
+     * @return
+     */
+    public State rootState(City startingCity, TaskSet carryingTasks) {
+        if (this.applyAStar) {
+            return new AStarState(startingCity, carryingTasks);
+        } else {
+            return new State(startingCity, carryingTasks);
+        }
     }
     
     private void printReport(State goal, long reachedDepth, long nStates, LocalDateTime startTime) {
@@ -158,7 +160,6 @@ public class BaseAlgorithm<T extends State> implements IAlgorithm {
         System.out.print(", total nb of states: " + nStates);
         System.out.print(", took " + Utils.humanReadableFormat(Duration.between(startTime, endTime)));
         System.out.print(", profit of: " + goal.profit(this.costPerKm));
-        System.out.println(", using early stopping: " + this.useEarlyStop);
     }
 }
 
