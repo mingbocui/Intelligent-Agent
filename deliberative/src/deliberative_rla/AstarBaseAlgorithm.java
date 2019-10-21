@@ -50,23 +50,14 @@ public class AstarBaseAlgorithm implements IAlgorithm {
     public Plan optimalPlan(City startingCity, TaskSet carryingTasks, TaskSet newTasks) {
 
         State initState = new State(startingCity, carryingTasks, newTasks);
-        AstarComparator astarComparator = new AstarComparator(this.costPerKm);
         var allStates = new HashSet<State>();
-        var statesToProcess = new PriorityQueue<State>(astarComparator);
-//        var statesToProcess = new ArrayList<State>();
+        var statesToProcess = new ArrayList<State>();
         statesToProcess.add(initState);
-
-
-        System.out.println("the size of all tasks are " + newTasks.size());
-        System.out.println("the size of carrying tasks are " + carryingTasks.size());
-        System.out.println("the size of completed tasks are " + initState.completedTasks.size());
-        System.out.println("the size of unpicked tasks are " + initState.unpickedTasks.size());
-
-
-        State stateIsProcessing;
 
         // this includes the power set of the available tasks
         HashMap<Topology.City, Set<Set<Task>>> tasksPerCity = Utils.taskPerCity(newTasks);
+
+        System.out.println("initial city is " + initState.city.name);
 
         long reachedDepth = 0;
 
@@ -76,15 +67,39 @@ public class AstarBaseAlgorithm implements IAlgorithm {
         // 1. build tree
         while (!statesToProcess.isEmpty()) {
 
-            stateIsProcessing = statesToProcess.poll();
+            var pickedUpStates = statesToProcess.parallelStream()
+                    .filter(s -> tasksPerCity.containsKey(s.city))
+                    .flatMap(s -> tasksPerCity.get(s.city).stream()
+                            // due to the above filter, we could also have filled tasksPerCity with empty lists...
+                            // this should not be necessary, as the set-of-all-tasks should take care of duplicates
+                            .filter(ts -> !ts.isEmpty())
+                            .map(ts -> s.pickUp(ts, this.capacity))
+                            .filter(Objects::nonNull))
+                    .collect(Collectors.toList());
+
+            pickedUpStates.addAll(statesToProcess);
+
+            List<State> nextStatesToProcess;
 
 
-            //best state selected by the astar function, every time only add one state, the size of statesToProcess should always be 1;
-            var pickedUpStates = AStarAlgorithm.Astar(stateIsProcessing, this.costPerKm);
+           // the city of nextStatesToProcess is the current city
+           nextStatesToProcess = pickedUpStates.parallelStream().collect(Collectors.toCollection(ArrayList::new));
 
-            List<State> nextStatesToProcess = new ArrayList<>();
+           // best state is evaluated with minimum cost, the city of the bestNextState is one of the neighbor city
+           State bestNextState = null;
+           double distance = Double.MAX_VALUE;
+           for(State state : nextStatesToProcess){
+               // I moved the Astar function from AStarAlgorithm to the State
+               state.Astar(); //to calculate the distance
+               if(state.hueristicDistance < distance){
+                   distance = state.hueristicDistance;
+                   bestNextState = state.Astar();
+               }
+           }
 
-            nextStatesToProcess.add(pickedUpStates);
+
+
+            System.out.println("before the size of states to Process is " + nextStatesToProcess.size());
 
             System.out.println("ASTAR is running!");
             var dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
@@ -100,7 +115,9 @@ public class AstarBaseAlgorithm implements IAlgorithm {
             // Note that our implementation of hashCode and equals has been overwritten, now only states with
             // a lower cost but same result will be added to the set.
 //            statesToProcess.poll();
-            allStates.addAll(nextStatesToProcess);
+            allStates.add(bestNextState);
+
+//            System.out.println("size of allStates is " + allStates.size());
 
             // 1.2.3. we don't need to spawn new states originating from these ones which already completed all tasks
             var tempStatesToProcess = nextStatesToProcess.parallelStream()
@@ -111,11 +128,12 @@ public class AstarBaseAlgorithm implements IAlgorithm {
             // TODO AStar sort next states
                 // statesToProcess is a PriorityQueue, so the it will ordering all the states with order of increasing cost
 //            statesToProcess.removeAll(State);
-            statesToProcess.addAll(nextStatesToProcess);
-
-            System.out.println("statesToProcess " + statesToProcess.size());
-
-//            if(statesToProcess.size() == 0) break;
+            // the size of stateToProcess should always be 1;
+            statesToProcess.remove(0);
+            statesToProcess.add(bestNextState);
+            if(statesToProcess.size() != 1){
+                throw new IllegalArgumentException("the size of stateToProcess should always be 1");
+            }
 
             reachedDepth += 1;
 
@@ -133,10 +151,6 @@ public class AstarBaseAlgorithm implements IAlgorithm {
                 }
             }
         }
-        // reached goal at depth: 14, total nb of states: 401323, took 4.430894s, profit of: 651074.0, using early stopping: true
-
-        // reached goal at depth: 13, total nb of states: 14048, took 0.607019s, profit of: 254657.0, using early stopping: true
-        // reached goal at depth: 40, total nb of states: 65352, took 2.478753s, profit of: 254657.0, using early stopping: false
 
         // 2. getting best plan, taking the one with max profit
         var theChosenOne = allStates.stream()

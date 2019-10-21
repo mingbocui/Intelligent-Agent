@@ -20,6 +20,9 @@ public class State {
     public List<Task> unpickedTasks; // unpicked tasks in the world
     public ArrayList<Action> plan;
 
+
+    public double hueristicDistance;
+
     public State(City currentCity) {
         this.currentTasks = new ArrayList<>();
         this.completedTasks = new ArrayList<>();
@@ -112,6 +115,64 @@ public class State {
     public double profit(long costPerKm) {
         return this.completedTasks.stream().mapToLong(t -> t.reward).sum() - constructPlan().totalDistance() * costPerKm;
     }
+
+
+
+
+    public static double astarHeuristic(State state, State nextState) {
+
+        //all unpicked task existed in nextState
+        //
+        var maxDistancenOfUnpickedTasks = nextState.unpickedTasks.stream().mapToDouble(ut->state.city.distanceTo(ut.pickupCity)).max().getAsDouble()
+                + nextState.unpickedTasks.stream().mapToDouble(Task::pathLength).max().getAsDouble();
+
+        if(state.currentTasks.isEmpty()) return maxDistancenOfUnpickedTasks;
+        else{
+            var maxDistanceOfCurrentTasks = state.currentTasks.stream().mapToDouble(ct->state.city.distanceTo(ct.deliveryCity)).max().getAsDouble();
+            return Math.max(maxDistancenOfUnpickedTasks, maxDistanceOfCurrentTasks);
+        }
+
+    }
+
+    public State Astar() {
+        State bestState = null;
+        double minCost = Double.MAX_VALUE;
+        double distance = Double.MAX_VALUE;
+        var neighborStates = this.city.neighbors().stream().map(this::moveTo).collect(Collectors.toList());
+
+        for(State neighborState : neighborStates){
+//            System.out.println(state.city.name);
+
+            distance = astarHeuristic(this, neighborState);
+
+//            System.out.println("city " + neighborState.city.name + " has current tasks " + neighborState.currentTasks.size() + " with distance " + distance);
+
+            if(distance < minCost){
+                minCost = distance;
+                bestState = neighborState;
+            }
+
+        }
+        this.hueristicDistance = distance;
+
+//        System.out.println(bestState.city.name);
+        return bestState;
+
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     // This is being done for the circle detection. We want an hash-collision in the HashSet, this will then trigger the
     // .equals() method in which we look for a path

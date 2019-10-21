@@ -45,6 +45,11 @@ public class DeliberativeAgent implements DeliberativeBehavior {
         // initialize the planner
         int capacity = agent.vehicles().get(0).capacity();
         String algorithmName = agent.readProperty("algorithm", String.class, "ASTAR");
+
+//        for(City city : topology.cities()){
+//            System.out.println("city " + city.name + " has current tasks " + city. + " with distance " + distance);
+//        }
+
         
         // Throws IllegalArgumentException if algorithm is unknown
         switch (EAlgorithm.valueOf(algorithmName.toUpperCase())) {
