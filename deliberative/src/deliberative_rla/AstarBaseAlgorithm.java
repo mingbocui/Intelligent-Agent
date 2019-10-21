@@ -49,14 +49,21 @@ public class AstarBaseAlgorithm implements IAlgorithm {
     @Override
     public Plan optimalPlan(City startingCity, TaskSet carryingTasks, TaskSet newTasks) {
 
-        State initState = new State(startingCity, carryingTasks);
+        State initState = new State(startingCity, carryingTasks, newTasks);
         AstarComparator astarComparator = new AstarComparator(this.costPerKm);
         var allStates = new HashSet<State>();
         var statesToProcess = new PriorityQueue<State>(astarComparator);
+//        var statesToProcess = new ArrayList<State>();
         statesToProcess.add(initState);
 
 
-        State stateIsProcessing = new State(startingCity, carryingTasks);
+        System.out.println("the size of all tasks are " + newTasks.size());
+        System.out.println("the size of carrying tasks are " + carryingTasks.size());
+        System.out.println("the size of completed tasks are " + initState.completedTasks.size());
+        System.out.println("the size of unpicked tasks are " + initState.unpickedTasks.size());
+
+
+        State stateIsProcessing;
 
         // this includes the power set of the available tasks
         HashMap<Topology.City, Set<Set<Task>>> tasksPerCity = Utils.taskPerCity(newTasks);
@@ -69,49 +76,21 @@ public class AstarBaseAlgorithm implements IAlgorithm {
         // 1. build tree
         while (!statesToProcess.isEmpty()) {
 
-//            stateIsProcessing = statesToProcess.poll();
-            // 1.1.1. picking up packages (if available)
-
-            var pickedUpStates = statesToProcess.parallelStream()
-                    .filter(s -> tasksPerCity.containsKey(s.city))
-                    .flatMap(s -> tasksPerCity.get(s.city).stream()
-                            // due to the above filter, we could also have filled tasksPerCity with empty lists...
-                            // this should not be necessary, as the set-of-all-tasks should take care of duplicates
-                            .filter(ts -> !ts.isEmpty())
-                            .map(ts -> s.pickUp(ts, this.capacity))
-                            .filter(Objects::nonNull))
-                    .collect(Collectors.toList());
-
-            // 1.1.2. don't pick anything up
-            pickedUpStates.addAll(statesToProcess);
-
-            // 1.1.3. moving to a new city
-            List<State> nextStatesToProcess;
-            if (this.applyAStar) {
-                nextStatesToProcess = pickedUpStates.parallelStream()
-                        .map(s -> AStarAlgorithm.Astar(s, this.costPerKm))
-                        .collect(Collectors.toCollection(ArrayList::new));
-
-                if(nextStatesToProcess.isEmpty()){
-                    System.out.print("nextStatesToProcess is Empty");
-                }
-                else{
-                    System.out.println("size of nextStatesToProcess " + nextStatesToProcess.size());
-                }
+            stateIsProcessing = statesToProcess.poll();
 
 
-            } else {
-                nextStatesToProcess = pickedUpStates.parallelStream()
-                        .flatMap(s -> s.city.neighbors().stream()
-                                .map(s::moveTo)
-                                .filter(ns -> !Utils.hasUselessCircle(ns)))
-                        .collect(Collectors.toCollection(ArrayList::new));
-            }
+            //best state selected by the astar function, every time only add one state, the size of statesToProcess should always be 1;
+            var pickedUpStates = AStarAlgorithm.Astar(stateIsProcessing, this.costPerKm);
 
+            List<State> nextStatesToProcess = new ArrayList<>();
+
+            nextStatesToProcess.add(pickedUpStates);
+
+            System.out.println("ASTAR is running!");
             var dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
             System.out.print(">>> " + dtf.format(LocalDateTime.now()) + " >>> in depth " + reachedDepth
                     + " new states pre / post circle & duplicate detection " + nextStatesToProcess.size() + " / ");
-            System.out.println("ASTAR is running!");
+
 
             // 1.2.1. remove duplicates and circles
             nextStatesToProcess.removeIf(allStates::contains);
@@ -120,7 +99,7 @@ public class AstarBaseAlgorithm implements IAlgorithm {
             // 1.2.2. keeping track of all new states, used for "circle detection"
             // Note that our implementation of hashCode and equals has been overwritten, now only states with
             // a lower cost but same result will be added to the set.
-            statesToProcess.poll();
+//            statesToProcess.poll();
             allStates.addAll(nextStatesToProcess);
 
             // 1.2.3. we don't need to spawn new states originating from these ones which already completed all tasks
@@ -132,11 +111,11 @@ public class AstarBaseAlgorithm implements IAlgorithm {
             // TODO AStar sort next states
                 // statesToProcess is a PriorityQueue, so the it will ordering all the states with order of increasing cost
 //            statesToProcess.removeAll(State);
-            statesToProcess.addAll(tempStatesToProcess);
+            statesToProcess.addAll(nextStatesToProcess);
 
             System.out.println("statesToProcess " + statesToProcess.size());
 
-            if(statesToProcess.size() == 0) break;
+//            if(statesToProcess.size() == 0) break;
 
             reachedDepth += 1;
 
