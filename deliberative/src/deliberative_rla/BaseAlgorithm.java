@@ -12,7 +12,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class BaseAlgorithm implements IAlgorithm {
+public class BaseAlgorithm<T extends State> implements IAlgorithm {
     private int capacity;
     private long costPerKm;
     private boolean useEarlyStop = true;
@@ -48,8 +48,9 @@ public class BaseAlgorithm implements IAlgorithm {
      */
     @Override
     public Plan optimalPlan(City startingCity, TaskSet carryingTasks, TaskSet newTasks) {
-        var allStates = new HashSet<State>();
-        var statesToProcess = new HashSet<>(Set.of(new State(startingCity, carryingTasks)));
+        var allStates = new HashSet<T>();
+        // forcing an order, mostly important for AStar
+        ArrayList<T> statesToProcess = new ArrayList<>(List.of(rootState(startingCity, carryingTasks)));
         
         // this includes the power set of the available tasks
         HashMap<Topology.City, Set<Set<Task>>> tasksPerCity = Utils.taskPerCity(newTasks);
@@ -100,12 +101,15 @@ public class BaseAlgorithm implements IAlgorithm {
             // 1.2.2. keeping track of all new states, used for "circle detection"
             // Note that our implementation of hashCode and equals has been overwritten, now only states with
             // a lower cost but same result will be added to the set.
+            //nextStatesToProcess.stream().filter(s -> !allStates.contains(s)).forEach(s -> allStates.add(s));
+            // TODO: bug here
             allStates.addAll(nextStatesToProcess);
             
             // 1.2.3. we don't need to spawn new states originating from these ones which already completed all tasks
+            // TODO: bug here
             statesToProcess = nextStatesToProcess.parallelStream()
                     .filter(s -> !s.completedTasks.containsAll(newTasks))
-                    .collect(Collectors.toCollection(HashSet::new));
+                    .collect(Collectors.toCollection(ArrayList::new));
             
             // TODO AStar sort next states
             
@@ -143,10 +147,16 @@ public class BaseAlgorithm implements IAlgorithm {
         }
     }
     
+    @Override
+    public T rootState(City startingCity, TaskSet carryingTasks) {
+        return null;
+    }
+    
     private void printReport(State goal, long reachedDepth, long nStates, LocalDateTime startTime) {
+        var endTime = LocalDateTime.now();
         System.out.print("reached goal at depth: " + reachedDepth);
         System.out.print(", total nb of states: " + nStates);
-        System.out.print(", took " + Utils.humanReadableFormat(Duration.between(startTime, LocalDateTime.now())));
+        System.out.print(", took " + Utils.humanReadableFormat(Duration.between(startTime, endTime)));
         System.out.print(", profit of: " + goal.profit(this.costPerKm));
         System.out.println(", using early stopping: " + this.useEarlyStop);
     }

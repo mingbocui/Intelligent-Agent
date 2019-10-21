@@ -55,9 +55,6 @@ public class AstarBaseAlgorithm implements IAlgorithm {
         var statesToProcess = new PriorityQueue<State>(astarComparator);
         statesToProcess.add(initState);
 
-
-        State stateIsProcessing = new State(startingCity, carryingTasks);
-
         // this includes the power set of the available tasks
         HashMap<Topology.City, Set<Set<Task>>> tasksPerCity = Utils.taskPerCity(newTasks);
 
@@ -115,14 +112,14 @@ public class AstarBaseAlgorithm implements IAlgorithm {
             allStates.addAll(nextStatesToProcess);
 
             // 1.2.3. we don't need to spawn new states originating from these ones which already completed all tasks
-            var tempStatesToProcess = nextStatesToProcess.parallelStream()
+            nextStatesToProcess = nextStatesToProcess.parallelStream()
                     .filter(s -> !s.completedTasks.containsAll(newTasks))
                     .collect(Collectors.toCollection(ArrayList::new));
 
 
             // TODO AStar sort next states
                 // statesToProcess is a PriorityQueue, so the it will ordering all the states with order of increasing cost
-            statesToProcess.addAll(tempStatesToProcess);
+            statesToProcess.addAll(nextStatesToProcess);
 
             reachedDepth += 1;
 

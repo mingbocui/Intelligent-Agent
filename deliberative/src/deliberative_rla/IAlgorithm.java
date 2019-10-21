@@ -1,10 +1,11 @@
 package deliberative_rla;
 
+import jdk.jshell.spi.ExecutionControl;
 import logist.plan.Plan;
 import logist.task.TaskSet;
 import logist.topology.Topology.City;
 
-public interface IAlgorithm {
+public interface IAlgorithm<T extends State> {
     /**
      * The `carryingTasks` and `newTasks` are split, probably not necessary as we can just "change" the origin of these
      * tasks to be the current city.
@@ -15,4 +16,6 @@ public interface IAlgorithm {
      * @return
      */
     Plan optimalPlan(City startingCity, TaskSet carryingTasks, TaskSet newTasks);
+    
+    T rootState(City startingCity, TaskSet carryingTasks);
 }

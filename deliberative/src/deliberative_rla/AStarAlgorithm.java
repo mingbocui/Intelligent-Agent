@@ -1,15 +1,23 @@
 package deliberative_rla;
 
 import logist.task.Task;
+import logist.task.TaskSet;
+import logist.topology.Topology;
 
 import java.util.Comparator;
 import java.util.List;
 
-public class AStarAlgorithm extends AstarBaseAlgorithm {
+public class AStarAlgorithm extends BaseAlgorithm<AStarState> {
     public AStarAlgorithm(int capacity, long costPerKm) {
         super(capacity, costPerKm, true, true);
+        System.out.println("running astar algorithm");
     }
-
+    
+    @Override
+    public AStarState rootState(Topology.City startingCity, TaskSet carryingTasks) {
+        return new AStarState(startingCity, carryingTasks);
+    }
+    
     public static double astarHeuristic(State state, State nextState, long costPerKm) {
         var distance_to_all_tasks = nextState.currentTasks.stream().mapToDouble(Task::pathLength).sum();
         // nett cost = cost - reward

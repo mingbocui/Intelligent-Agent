@@ -40,7 +40,7 @@ public class DeliberativeAgent implements DeliberativeBehavior {
         this.agent = agent;
         
         // running some tests
-        tests();
+        //tests();
         
         // initialize the planner
         int capacity = agent.vehicles().get(0).capacity();
