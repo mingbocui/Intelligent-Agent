@@ -18,21 +18,21 @@ public class AStarAlgorithm extends AstarBaseAlgorithm {
         return (state.city.distanceTo(nextState.city) + distance_to_all_tasks) * costPerKm;
     }
 
-//    public static state Astar(State state, long costPerKm) {
-//        State bestState = null;
-//        double minCost = Double.MAX_VALUE;
-//        double cost;
-//
+    public static State Astar(State state, long costPerKm) {
+        State bestState = null;
+        double minCost = Double.MAX_VALUE;
+        double cost;
+
+        return state.city.neighbors().stream()
+                .map(state::moveTo)
+                .min(Comparator.comparing(x -> astarHeuristic(state, x, costPerKm)))
+                .get();
+
 //        return state.city.neighbors().stream()
 //                .map(state::moveTo)
-//                .min(Comparator.comparing(x -> astarHeuristic(state, x, costPerKm)))
-//                .get();
+//                .sorted(Comparator.comparing(x -> astarHeuristic(state, x, costPerKm)))
+//                .findFirst()
 //
-////        return state.city.neighbors().stream()
-////                .map(state::moveTo)
-////                .sorted(Comparator.comparing(x -> astarHeuristic(state, x, costPerKm)))
-////                .findFirst()
-////
-//
-//    }
+
+    }
 }

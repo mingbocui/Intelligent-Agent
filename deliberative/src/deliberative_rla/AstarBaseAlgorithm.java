@@ -55,6 +55,7 @@ public class AstarBaseAlgorithm implements IAlgorithm {
         var statesToProcess = new PriorityQueue<State>(astarComparator);
         statesToProcess.add(initState);
 
+
         State stateIsProcessing = new State(startingCity, carryingTasks);
 
         // this includes the power set of the available tasks

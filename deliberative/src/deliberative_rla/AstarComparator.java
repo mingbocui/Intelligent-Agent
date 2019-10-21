@@ -16,8 +16,9 @@ public class AstarComparator implements Comparator<State>{
     public int compare(State s1, State s2){
 
 
-        var costs1 = s1.currentTasks.stream().mapToDouble(Task::pathLength).sum();
-        var costs2 = s2.currentTasks.stream().mapToDouble(Task::pathLength).sum();
+        var costs1 = s1.constructPlan().totalDistance() + s1.currentTasks.stream().mapToDouble(Task::pathLength).sum();
+        var costs2 = s2.constructPlan().totalDistance() + s2.currentTasks.stream().mapToDouble(Task::pathLength).sum();
+
 
         return Double.compare(costs1, costs2);
 
