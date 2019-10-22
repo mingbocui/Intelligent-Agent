@@ -92,12 +92,14 @@ public class AStarState extends State {
 
         return null;
     }
+    // Sadly this amazing code breaks down the A* algorithm using multiple agents, a not so nice but working solution
+    // was implemented instead.
 
     // This is being done for the circle detection. We want an hash-collision in the HashSet, this will then trigger the
     // .equals() method in which we look for a path
     @Override
     public int hashCode() {
-        return Objects.hash(this.unpickedTasks, this.completedTasks, this.currentTasks, this.city);
+        return Objects.hash(this.unpickedTasks, this.completedTasks, this.currentTasks, this.city, this.initialCity);
     }
 
     // This is the check for the "circle".
@@ -113,6 +115,6 @@ public class AStarState extends State {
 
         // basically if the plan takes longer to achieve the same, we return equals to trigger a collision,
         // discarding the new but worse plan.
-        return this.constructPlan().totalDistance() >= state.constructPlan().totalDistance();
+        return this.constructPlan().totalDistance() > state.constructPlan().totalDistance();
     }
 }

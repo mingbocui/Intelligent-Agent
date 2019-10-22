@@ -17,11 +17,13 @@
 		<set algorithm="ASTAR"/>
 
 	</agent>
+
 	<agent name="deliberative-main-astar">
 		<set class-path="bin/"/>
 		<set class-name="deliberative_rla.DeliberativeAgent"/>
 		<set algorithm="ASTAR"/>
 	</agent>
+
 	<agent name="deliberative-main-bfs">
 		<set class-path="bin/"/>
 		<set class-name="deliberative_rla.DeliberativeAgent"/>

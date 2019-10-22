@@ -35,13 +35,18 @@ public class AStarAlgorithm implements IAlgorithm {
      */
     @Override
     public Plan optimalPlan(City startingCity, TaskSet carryingTasks, TaskSet newTasks) {
+        Set<Task> taskToProcess = new HashSet<>();
+        taskToProcess.addAll(newTasks);
+        taskToProcess.addAll(carryingTasks);
+
         AStarState initState = new AStarState(startingCity, carryingTasks, newTasks);
-        Set<AStarState> allStates = new HashSet<>();
+        //Set<AStarState> allStates = new HashSet<>();
         Queue<AStarState> stateQueue = new PriorityQueue<>(new AStarComparator());
         stateQueue.add(initState);
 
         // this includes the power set of the available tasks
         HashMap<City, Set<Set<Task>>> tasksPerCity = Utils.taskPerCity(newTasks);
+        HashMap<AStarState, Double> stateHashMap = new HashMap<>();
 
         long reachedDepth = 0;
 
@@ -59,8 +64,8 @@ public class AStarAlgorithm implements IAlgorithm {
                     + stateQueue.size() + " elements to process");
 
             // early stopping if a solution has been found
-            if (currentState.completedTasks.containsAll(newTasks)) {
-                Utils.printReport("ASTAR", currentState, reachedDepth, allStates.size(), startTime, this.costPerKm);
+            if (currentState.completedTasks.containsAll(taskToProcess)) {
+                Utils.printReport("ASTAR", currentState, reachedDepth, stateHashMap.size(), startTime, this.costPerKm);
                 return currentState.constructPlan();
             }
 
@@ -84,12 +89,21 @@ public class AStarAlgorithm implements IAlgorithm {
                             .filter(Predicate.not(State::hasUselessCircle)))
                     .collect(Collectors.toList());
 
+            succ.removeIf(t -> stateHashMap.containsKey(t) && stateHashMap.get(t) >= t.fScore());
+            succ.forEach(t -> {
+                if (stateHashMap.containsKey(t)) {
+                    stateHashMap.replace(t, t.fScore());
+                } else {
+                    stateHashMap.put(t, t.fScore());
+                }
+            });
 
-            succ.removeIf(allStates::contains);
-            allStates.addAll(succ);
+            //succ.removeIf(allStates::contains);
+            //allStates.addAll(succ);
             stateQueue.addAll(succ);
             reachedDepth++;
         }
+
         System.out.println("did not find a solution");
 
         return Plan.EMPTY;
