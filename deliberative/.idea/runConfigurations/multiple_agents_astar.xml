@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="multiple-agents astar" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="logist.LogistPlatform" />
+    <module name="deliberative" />
+    <option name="PROGRAM_PARAMETERS" value="config/deliberative.xml deliberative-main-astar deliberative-main-astar deliberative-main-astar" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
