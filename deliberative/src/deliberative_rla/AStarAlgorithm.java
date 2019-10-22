@@ -40,12 +40,12 @@ public class AStarAlgorithm implements IAlgorithm {
         taskToProcess.addAll(carryingTasks);
 
         AStarState initState = new AStarState(startingCity, carryingTasks, newTasks);
-        //Set<AStarState> allStates = new HashSet<>();
         Queue<AStarState> stateQueue = new PriorityQueue<>(new AStarComparator());
         stateQueue.add(initState);
 
         // this includes the power set of the available tasks
         HashMap<City, Set<Set<Task>>> tasksPerCity = Utils.taskPerCity(newTasks);
+        // this is in order to keep track of the shortest paths to reach the given state
         HashMap<AStarState, Double> stateHashMap = new HashMap<>();
 
         long reachedDepth = 0;
@@ -98,8 +98,6 @@ public class AStarAlgorithm implements IAlgorithm {
                 }
             });
 
-            //succ.removeIf(allStates::contains);
-            //allStates.addAll(succ);
             stateQueue.addAll(succ);
             reachedDepth++;
         }
