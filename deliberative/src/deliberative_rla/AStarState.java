@@ -93,6 +93,7 @@ public class AStarState extends State {
         return null;
     }
 
+    /*
     // This is being done for the circle detection. We want an hash-collision in the HashSet, this will then trigger the
     // .equals() method in which we look for a path
     @Override
@@ -115,4 +116,6 @@ public class AStarState extends State {
         // discarding the new but worse plan.
         return this.constructPlan().totalDistance() > state.constructPlan().totalDistance();
     }
+
+     */
 }
