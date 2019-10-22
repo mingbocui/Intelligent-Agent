@@ -89,14 +89,14 @@ public class AStarAlgorithm implements IAlgorithm {
             
             succ.removeIf(allStates::contains);
             allStates.addAll(succ);
-            stateQueue.addAll(succ);
+            //stateQueue.addAll(succ);
             
-            //if (!visitedStates.containsKey(currentState)) {
-            //    visitedStates.put(currentState, currentState.getAStarDistance());
-            //    stateQueue.addAll(succ);
-            //} else if (visitedStates.get(currentState) >= currentState.getAStarDistance()) {
-            //    visitedStates.replace(currentState, currentState.getAStarDistance());
-            //}
+            if (!visitedStates.containsKey(currentState)) {
+                visitedStates.put(currentState, currentState.getAStarDistance());
+                stateQueue.addAll(succ);
+            } else if (visitedStates.get(currentState) >= currentState.getAStarDistance()) {
+                visitedStates.replace(currentState, currentState.getAStarDistance());
+            }
             
             System.out.println("depth " + reachedDepth + " ended \n");
             reachedDepth++;
