@@ -60,6 +60,7 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 
     @Override
     public void planCancelled(TaskSet carriedTasks) {
+        System.out.println("Agent " + agent.id() + " had to reevaluate his plan, using " + algorithm);
 
         if (!carriedTasks.isEmpty()) {
             // This cannot happen for this simple agent, but typically

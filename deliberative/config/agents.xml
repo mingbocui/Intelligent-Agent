@@ -27,7 +27,7 @@
 	<agent name="deliberative-main-bfs">
 		<set class-path="bin/"/>
 		<set class-name="deliberative_rla.DeliberativeAgent"/>
-		<set use-sane-state="true"/>
+		<set use-sane-state="false"/>
 		<set algorithm="BFS"/>
 	</agent>
 </agents>

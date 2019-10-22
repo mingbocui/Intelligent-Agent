@@ -25,7 +25,7 @@ public class BFSAlgorithm implements IAlgorithm {
         this.costPerKm = costPerKm;
         this.useSaneState = useSaneState;
 
-        System.out.println("Using BFS with sane state? " + useSaneState);
+        //System.out.println("Using BFS with sane state? " + useSaneState);
     }
 
     public BFSAlgorithm(int capacity, long costPerKm) {
@@ -56,7 +56,7 @@ public class BFSAlgorithm implements IAlgorithm {
         if (this.useSaneState) {
             statesToProcess = Set.of(new AStarState(startingCity, carryingTasks, newTasks));
         } else {
-            statesToProcess = Set.of(new State(startingCity, carryingTasks));
+            statesToProcess = Set.of(new State(startingCity, carryingTasks, newTasks));
         }
 
         // this includes the power set of the available tasks
@@ -110,8 +110,8 @@ public class BFSAlgorithm implements IAlgorithm {
 
             reachedDepth += 1;
 
-            System.out.println("In depth " + reachedDepth + ", total nb of states: "
-                    + allStates.size() + " new states to check: " + nextStatesToProcess.size());
+            //System.out.println("In depth " + reachedDepth + ", total nb of states: "
+            //        + allStates.size() + " new states to check: " + nextStatesToProcess.size());
 
             var theChosenOne = nextStatesToProcess.stream()
                     .filter(s -> s.completedTasks.containsAll(taskToProcess))
@@ -129,7 +129,7 @@ public class BFSAlgorithm implements IAlgorithm {
                 .max(Comparator.comparing(s -> s.profit(this.costPerKm)));
 
         if (theChosenOne.isPresent()) {
-            Utils.printReport("BFS", theChosenOne.get(), reachedDepth, allStates.size(), startTime, this.costPerKm);
+            //Utils.printReport("BFS", theChosenOne.get(), reachedDepth, allStates.size(), startTime, this.costPerKm);
             return theChosenOne.get().constructPlan();
         } else {
             throw new IllegalStateException("woops");

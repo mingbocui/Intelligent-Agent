@@ -53,15 +53,15 @@ public class AStarAlgorithm implements IAlgorithm {
         var startTime = LocalDateTime.now();
 
         while (!stateQueue.isEmpty()) {
-            System.out.println("depth " + reachedDepth + " starting. currently taking "
-                    + Utils.humanReadableFormat(Duration.between(startTime, LocalDateTime.now())));
+            //System.out.println("depth " + reachedDepth + " starting. currently taking "
+            //        + Utils.humanReadableFormat(Duration.between(startTime, LocalDateTime.now())));
 
             AStarState currentState = stateQueue.poll();
 
-            System.out.println("state located in city " + currentState.city.name + " with current tasks "
-                    + currentState.currentTasks.size() + ", with completed tasks " + currentState.completedTasks.size()
-                    + ", with unpicked tasks " + currentState.unpickedTasks.size() + ", in total we have "
-                    + stateQueue.size() + " elements to process");
+            //System.out.println("state located in city " + currentState.city.name + " with current tasks "
+            //        + currentState.currentTasks.size() + ", with completed tasks " + currentState.completedTasks.size()
+            //        + ", with unpicked tasks " + currentState.unpickedTasks.size() + ", in total we have "
+            //        + stateQueue.size() + " elements to process");
 
             // early stopping if a solution has been found
             if (currentState.completedTasks.containsAll(taskToProcess)) {
@@ -89,7 +89,8 @@ public class AStarAlgorithm implements IAlgorithm {
                             .filter(Predicate.not(State::hasUselessCircle)))
                     .collect(Collectors.toList());
 
-            succ.removeIf(t -> stateHashMap.containsKey(t) && stateHashMap.get(t) >= t.fScore());
+            // we can skip the states which take longer to get to the same state
+            succ.removeIf(t -> stateHashMap.containsKey(t) && stateHashMap.get(t) <= t.fScore());
             succ.forEach(t -> {
                 if (stateHashMap.containsKey(t)) {
                     stateHashMap.replace(t, t.fScore());
@@ -102,7 +103,7 @@ public class AStarAlgorithm implements IAlgorithm {
             reachedDepth++;
         }
 
-        System.out.println("did not find a solution");
+        //System.out.println("did not find a solution");
 
         return Plan.EMPTY;
     }

@@ -120,6 +120,6 @@ public class Utils {
         System.out.print(", reached goal at depth: " + reachedDepth);
         System.out.print(", total nb of states: " + nStates);
         System.out.print(", took " + Utils.humanReadableFormat(Duration.between(startTime, LocalDateTime.now())));
-        System.out.print(", profit of: " + goal.profit(costPerKm));
+        System.out.println(", profit of: " + goal.profit(costPerKm));
     }
 }
