@@ -47,6 +47,10 @@ public class BFSAlgorithm implements IAlgorithm {
      */
     @Override
     public Plan optimalPlan(City startingCity, TaskSet carryingTasks, TaskSet newTasks) {
+        Set<Task> taskToProcess = new HashSet<>();
+        taskToProcess.addAll(newTasks);
+        taskToProcess.addAll(carryingTasks);
+
         Set<State> allStates = new HashSet<>();
         Set<State> statesToProcess;
         if (this.useSaneState) {
@@ -101,7 +105,7 @@ public class BFSAlgorithm implements IAlgorithm {
 
             // 1.2.3. we don't need to spawn new states originating from these ones which already completed all tasks
             statesToProcess = nextStatesToProcess.parallelStream()
-                    .filter(s -> !s.completedTasks.containsAll(newTasks))
+                    .filter(s -> !s.completedTasks.containsAll(taskToProcess))
                     .collect(Collectors.toSet());
 
             reachedDepth += 1;
@@ -110,7 +114,7 @@ public class BFSAlgorithm implements IAlgorithm {
                     + allStates.size() + " new states to check: " + nextStatesToProcess.size());
 
             var theChosenOne = nextStatesToProcess.stream()
-                    .filter(s -> s.completedTasks.containsAll(newTasks))
+                    .filter(s -> s.completedTasks.containsAll(taskToProcess))
                     .max(Comparator.comparing(s -> s.profit(this.costPerKm)));
 
             if (theChosenOne.isPresent()) {
@@ -121,7 +125,7 @@ public class BFSAlgorithm implements IAlgorithm {
 
         // 2. getting best plan, taking the one with max profit
         var theChosenOne = allStates.stream()
-                .filter(s -> s.completedTasks.containsAll(newTasks))
+                .filter(s -> s.completedTasks.containsAll(taskToProcess))
                 .max(Comparator.comparing(s -> s.profit(this.costPerKm)));
 
         if (theChosenOne.isPresent()) {

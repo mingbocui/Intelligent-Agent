@@ -35,6 +35,10 @@ public class AStarAlgorithm implements IAlgorithm {
      */
     @Override
     public Plan optimalPlan(City startingCity, TaskSet carryingTasks, TaskSet newTasks) {
+        Set<Task> taskToProcess = new HashSet<>();
+        taskToProcess.addAll(newTasks);
+        taskToProcess.addAll(carryingTasks);
+
         AStarState initState = new AStarState(startingCity, carryingTasks, newTasks);
         Set<AStarState> allStates = new HashSet<>();
         Queue<AStarState> stateQueue = new PriorityQueue<>(new AStarComparator());
@@ -59,7 +63,7 @@ public class AStarAlgorithm implements IAlgorithm {
                     + stateQueue.size() + " elements to process");
 
             // early stopping if a solution has been found
-            if (currentState.completedTasks.containsAll(newTasks)) {
+            if (currentState.completedTasks.containsAll(taskToProcess)) {
                 Utils.printReport("ASTAR", currentState, reachedDepth, allStates.size(), startTime, this.costPerKm);
                 return currentState.constructPlan();
             }
