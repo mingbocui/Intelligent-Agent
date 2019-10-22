@@ -6,11 +6,9 @@ import logist.agent.Agent;
 import logist.behavior.DeliberativeBehavior;
 import logist.plan.Plan;
 import logist.simulation.Vehicle;
-import logist.task.Task;
 import logist.task.TaskDistribution;
 import logist.task.TaskSet;
 import logist.topology.Topology;
-import logist.topology.Topology.City;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -20,18 +18,12 @@ import java.util.stream.Collectors;
  * An optimal planner for one vehicle.
  */
 public class DeliberativeAgent implements DeliberativeBehavior {
-    enum EAlgorithm {BFS, ASTAR}
-    
     /* Environment */
     Topology topology;
     TaskDistribution td;
-    
     /* the properties of the agent */
     Agent agent;
-    
     IAlgorithm algorithm;
-    
-    private int depthLimit;
     
     @Override
     public void setup(Topology topology, TaskDistribution td, Agent agent) {
@@ -40,16 +32,12 @@ public class DeliberativeAgent implements DeliberativeBehavior {
         this.agent = agent;
         
         // running some tests
-        tests();
+        // tests();
         
         // initialize the planner
         int capacity = agent.vehicles().get(0).capacity();
         String algorithmName = agent.readProperty("algorithm", String.class, "ASTAR");
-
-//        for(City city : topology.cities()){
-//            System.out.println("city " + city.name + " has current tasks " + city. + " with distance " + distance);
-//        }
-
+        
         
         // Throws IllegalArgumentException if algorithm is unknown
         switch (EAlgorithm.valueOf(algorithmName.toUpperCase())) {
@@ -67,29 +55,6 @@ public class DeliberativeAgent implements DeliberativeBehavior {
     @Override
     public Plan plan(Vehicle vehicle, TaskSet tasks) {
         return this.algorithm.optimalPlan(vehicle.getCurrentCity(), vehicle.getCurrentTasks(), tasks);
-    }
-    
-    private Plan naivePlan(Vehicle vehicle, TaskSet tasks) {
-        City current = vehicle.getCurrentCity();
-        Plan plan = new Plan(current);
-        
-        for (Task task : tasks) {
-            // move: current city => pickup location
-            for (City city : current.pathTo(task.pickupCity))
-                plan.appendMove(city);
-            
-            plan.appendPickup(task);
-            
-            // move: pickup location => delivery location
-            for (City city : task.path())
-                plan.appendMove(city);
-            
-            plan.appendDelivery(task);
-            
-            // set current city
-            current = task.deliveryCity;
-        }
-        return plan;
     }
     
     @Override
@@ -135,4 +100,6 @@ public class DeliberativeAgent implements DeliberativeBehavior {
                 .moveTo(topology.parseCity("Lausanne")));
         System.out.println("does it detect the circle? " + dummyState);
     }
+    
+    enum EAlgorithm {BFS, ASTAR}
 }

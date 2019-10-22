@@ -1,6 +1,5 @@
 package deliberative_rla;
 
-import logist.plan.Action;
 import logist.task.Task;
 import logist.task.TaskSet;
 import logist.topology.Topology.City;
@@ -9,7 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class AStarState extends State {
     public ArrayList<Task> unpickedTasks; // tasks this state should still pick up
@@ -46,7 +44,7 @@ public class AStarState extends State {
         return AStarDistance;
     }
     
-    public double calculateHeuristic(){
+    public double calculateHeuristic() {
         // choose the maximal single distance as the heuristic distance
         double dist = -1;
         if (this.currentTasks.size() > 0) {
@@ -94,7 +92,7 @@ public class AStarState extends State {
             
             as.AStarDistance = cost + as.calculateHeuristic();
         }
-    
+        
         return null;
     }
     

@@ -13,12 +13,12 @@ import java.util.stream.Collectors;
 public class AStarAlgorithm implements IAlgorithm {
     private int capacity;
     private long costPerKm;
-
+    
     public AStarAlgorithm(int capacity, long costPerKm) {
         this.capacity = capacity;
         this.costPerKm = costPerKm;
     }
-
+    
     /**
      * The basic idea is:
      * - at each state the agent can:
@@ -38,30 +38,30 @@ public class AStarAlgorithm implements IAlgorithm {
         Set<AStarState> allStates = new HashSet<>();
         Queue<AStarState> stateQueue = new PriorityQueue<>(new AStarComparator());
         stateQueue.add(initState);
-
+        
         // note that visitedStates will say that it contains the key according to given equal method
         // check with the tests in DeliberativeAgent to see the examples.
         // It might be a good choice to provide a new class CircleState or something that does the equals and hashCode
         // as it is right now, and change the normal hashCode and equals method for State that does only the most basic stuff
         Map<AStarState, Double> visitedStates = new HashMap<>();
-
+        
         // this includes the power set of the available tasks
         HashMap<City, Set<Set<Task>>> tasksPerCity = Utils.taskPerCity(newTasks);
-
+        
         long reachedDepth = 0;
-
+        
         var startTime = LocalDateTime.now();
-
+        
         while (!stateQueue.isEmpty()) {
             System.out.println("depth " + reachedDepth + " starts");
             //stateQueue.stream().forEach(s->{System.out.println(s.getAStarDistance());});
-
+            
             AStarState currentState = stateQueue.poll();
             System.out.println("state located in city " + currentState.city.name + " with current tasks " + currentState.currentTasks.size()
-                                                        + ", with completed tasks " + currentState.completedTasks.size() + ", with unpicked tasks " + currentState.unpickedTasks.size());
+                    + ", with completed tasks " + currentState.completedTasks.size() + ", with unpicked tasks " + currentState.unpickedTasks.size());
             if (currentState.completedTasks.containsAll(newTasks))
                 return currentState.constructPlan();
-
+            
             // Spawn new states
             List<AStarState> succ;
             if (tasksPerCity.containsKey(currentState.city)) {
@@ -75,7 +75,7 @@ public class AStarAlgorithm implements IAlgorithm {
             } else {
                 succ = List.of(currentState);
             }
-
+            
             succ = succ.stream()
                     .flatMap(s -> s.city.neighbors().stream()
                             .map(s::moveTo)
@@ -88,13 +88,13 @@ public class AStarAlgorithm implements IAlgorithm {
             if (!visitedStates.containsKey(currentState)) {
                 visitedStates.put(currentState, currentState.getAStarDistance());
                 stateQueue.addAll(succ);
-            } else if(visitedStates.get(currentState) >= currentState.getAStarDistance()){
+            } else if (visitedStates.get(currentState) >= currentState.getAStarDistance()) {
                 visitedStates.replace(currentState, currentState.getAStarDistance());
             }
-
+            
             System.out.println("depth " + reachedDepth + " ended \n");
             reachedDepth++;
-
+            
         }
         return Plan.EMPTY;
     }

@@ -18,16 +18,12 @@ import logist.topology.Topology.City;
 @SuppressWarnings("unused")
 public class DeliberativeTemplate implements DeliberativeBehavior {
     
-    enum Algorithm {BFS, ASTAR}
-    
     /* Environment */
     Topology topology;
     TaskDistribution td;
-    
     /* the properties of the agent */
     Agent agent;
     int capacity;
-    
     /* the planning class */
     Algorithm algorithm;
     
@@ -99,4 +95,6 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
             // plan is computed.
         }
     }
+    
+    enum Algorithm {BFS, ASTAR}
 }
