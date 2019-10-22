@@ -45,7 +45,8 @@ public class DeliberativeAgent implements DeliberativeBehavior {
                 this.algorithm = new AStarAlgorithm(capacity, this.agent.vehicles().get(0).costPerKm());
                 break;
             case BFS:
-                this.algorithm = new BFSAlgorithm(capacity, this.agent.vehicles().get(0).costPerKm());
+                boolean useSaneState = agent.readProperty("use-sane-state", Boolean.class, false);
+                this.algorithm = new BFSAlgorithm(capacity, this.agent.vehicles().get(0).costPerKm(), useSaneState);
                 break;
             default:
                 throw new IllegalArgumentException("no such algorithm known");

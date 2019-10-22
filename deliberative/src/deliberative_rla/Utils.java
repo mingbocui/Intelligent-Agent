@@ -8,6 +8,7 @@ import logist.topology.Topology;
 import logist.topology.Topology.City;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.*;
 
 public class Utils {
@@ -112,5 +113,13 @@ public class Utils {
                 .substring(2)
                 .replaceAll("(\\d[HMS])(?!$)", "$1 ")
                 .toLowerCase();
+    }
+
+    public static void printReport(String algorithmIdentifier, State goal, long reachedDepth, long nStates, LocalDateTime startTime, long costPerKm) {
+        System.out.print("Algorithm:" + algorithmIdentifier);
+        System.out.print(", reached goal at depth: " + reachedDepth);
+        System.out.print(", total nb of states: " + nStates);
+        System.out.print(", took " + Utils.humanReadableFormat(Duration.between(startTime, LocalDateTime.now())));
+        System.out.print(", profit of: " + goal.profit(costPerKm));
     }
 }

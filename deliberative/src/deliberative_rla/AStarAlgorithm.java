@@ -60,6 +60,7 @@ public class AStarAlgorithm implements IAlgorithm {
 
             // early stopping if a solution has been found
             if (currentState.completedTasks.containsAll(newTasks)) {
+                Utils.printReport("ASTAR", currentState, reachedDepth, allStates.size(), startTime, this.costPerKm);
                 return currentState.constructPlan();
             }
 

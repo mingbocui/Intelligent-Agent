@@ -12,13 +12,24 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
+// Algorithm:BFS, reached goal at depth: 17, total nb of states: 173857, took 1.39698s, profit of: 389802.0
+// Algorithm:ASTAR, reached goal at depth: 30686, total nb of states: 44585, took 2.030551s, profit of: 389802.0
+
 public class BFSAlgorithm implements IAlgorithm {
     private int capacity;
     private long costPerKm;
+    private boolean useSaneState;
 
-    public BFSAlgorithm(int capacity, long costPerKm) {
+    public BFSAlgorithm(int capacity, long costPerKm, boolean useSaneState) {
         this.capacity = capacity;
         this.costPerKm = costPerKm;
+        this.useSaneState = useSaneState;
+
+        System.out.println("Using BFS with sane state? " + useSaneState);
+    }
+
+    public BFSAlgorithm(int capacity, long costPerKm) {
+        this(capacity, costPerKm, false);
     }
 
     /**
@@ -37,7 +48,12 @@ public class BFSAlgorithm implements IAlgorithm {
     @Override
     public Plan optimalPlan(City startingCity, TaskSet carryingTasks, TaskSet newTasks) {
         Set<State> allStates = new HashSet<>();
-        Set<State> statesToProcess = Set.of(new State(startingCity, carryingTasks));
+        Set<State> statesToProcess;
+        if (this.useSaneState) {
+            statesToProcess = Set.of(new AStarState(startingCity, carryingTasks, newTasks));
+        } else {
+            statesToProcess = Set.of(new State(startingCity, carryingTasks));
+        }
 
         // this includes the power set of the available tasks
         HashMap<Topology.City, Set<Set<Task>>> tasksPerCity = Utils.taskPerCity(newTasks);
@@ -98,7 +114,7 @@ public class BFSAlgorithm implements IAlgorithm {
                     .max(Comparator.comparing(s -> s.profit(this.costPerKm)));
 
             if (theChosenOne.isPresent()) {
-                printReport(theChosenOne.get(), reachedDepth, allStates.size(), startTime);
+                Utils.printReport("BFS", theChosenOne.get(), reachedDepth, allStates.size(), startTime, this.costPerKm);
                 return theChosenOne.get().constructPlan();
             }
         }
@@ -109,18 +125,12 @@ public class BFSAlgorithm implements IAlgorithm {
                 .max(Comparator.comparing(s -> s.profit(this.costPerKm)));
 
         if (theChosenOne.isPresent()) {
-            printReport(theChosenOne.get(), reachedDepth, allStates.size(), startTime);
+            Utils.printReport("BFS", theChosenOne.get(), reachedDepth, allStates.size(), startTime, this.costPerKm);
             return theChosenOne.get().constructPlan();
         } else {
             throw new IllegalStateException("woops");
         }
     }
 
-    private void printReport(State goal, long reachedDepth, long nStates, LocalDateTime startTime) {
-        System.out.print("reached goal at depth: " + reachedDepth);
-        System.out.print(", total nb of states: " + nStates);
-        System.out.print(", took " + Utils.humanReadableFormat(Duration.between(startTime, LocalDateTime.now())));
-        System.out.print(", profit of: " + goal.profit(this.costPerKm));
-    }
 }
 
