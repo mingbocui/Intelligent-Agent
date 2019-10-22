@@ -82,7 +82,7 @@ public class AStarState extends State {
     
     @Override
     public AStarState pickUp(Set<Task> tasks, long capacity) {
-        double cost = AStarDistance - calculateHeuristic();
+        double cost = AStarDistance - calculateHeuristic(); // getting original cost g(n)
         State s = super.pickUp(tasks, capacity);
         
         if (s != null) {
