@@ -11,15 +11,13 @@ import java.util.Set;
 
 public class AStarState extends State {
     public ArrayList<Task> unpickedTasks; // tasks this state should still pick up
-    private double AStarDistance;
-    
-    public AStarState(City startingCity, TaskSet carryingTasks, TaskSet newTasks, double cost) {
+
+    public AStarState(City startingCity, TaskSet carryingTasks, TaskSet newTasks) {
         super(startingCity, carryingTasks, newTasks);
         
         this.unpickedTasks = new ArrayList<>(newTasks);
         this.unpickedTasks.removeAll(this.currentTasks);
         this.unpickedTasks.removeAll(this.completedTasks);
-        this.AStarDistance = cost + this.calculateHeuristic();
     }
     
     public AStarState(AStarState other) {
@@ -30,20 +28,14 @@ public class AStarState extends State {
         currentTasks = new ArrayList<>(other.currentTasks);
         completedTasks = new ArrayList<>(other.completedTasks);
         unpickedTasks = new ArrayList<>(other.unpickedTasks);
-        AStarDistance = other.AStarDistance;
     }
     
-    public AStarState(State other, List unpickedTasks, double AStarDistance) {
+    public AStarState(State other, List unpickedTasks) {
         super(other);
         
         this.unpickedTasks = new ArrayList<>(unpickedTasks);
-        this.AStarDistance = AStarDistance;
     }
-    
-    public double getAStarDistance() {
-        return AStarDistance;
-    }
-    
+
     public double calculateHeuristic() {
         // choose the maximal single distance as the heuristic distance
         double dist = -1;
@@ -71,31 +63,36 @@ public class AStarState extends State {
         
         return dist;
     }
+
+    public double fScore() {
+        double gScore = constructPlan().totalDistance();
+
+        return gScore + calculateHeuristic();
+    }
     
     @Override
     public AStarState moveTo(City city) {
-        AStarState s = new AStarState(super.moveTo(city), unpickedTasks, AStarDistance);
+        AStarState s = new AStarState(super.moveTo(city), unpickedTasks);
         s.unpickedTasks.removeIf(s.completedTasks::contains);
-        s.AStarDistance = this.AStarDistance + s.calculateHeuristic();
         return s;
     }
     
     @Override
     public AStarState pickUp(Set<Task> tasks, long capacity) {
-        double cost = AStarDistance - calculateHeuristic(); // getting original cost g(n)
+        //double cost = AStarDistance - calculateHeuristic(); // getting original cost g(n)
         State s = super.pickUp(tasks, capacity);
         
         if (s != null) {
             // get the g value in the formula of g(n) + f(n) before update the tasks;
-            AStarState as = new AStarState(s, unpickedTasks, AStarDistance);
+            AStarState as = new AStarState(s, unpickedTasks);
             as.unpickedTasks.removeIf(tasks::contains);
             
-            as.AStarDistance = cost + as.calculateHeuristic();
+            return as;
         }
         
         return null;
     }
-    
+
     // This is being done for the circle detection. We want an hash-collision in the HashSet, this will then trigger the
     // .equals() method in which we look for a path
     @Override
