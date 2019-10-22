@@ -88,12 +88,12 @@ public class AStarAlgorithm implements IAlgorithm {
                             .filter(Predicate.not(State::hasUselessCircle)))
                     .collect(Collectors.toList());
 
-
             succ.removeIf(allStates::contains);
             allStates.addAll(succ);
             stateQueue.addAll(succ);
             reachedDepth++;
         }
+
         System.out.println("did not find a solution");
 
         return Plan.EMPTY;

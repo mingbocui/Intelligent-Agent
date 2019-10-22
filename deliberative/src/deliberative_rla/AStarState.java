@@ -113,6 +113,6 @@ public class AStarState extends State {
 
         // basically if the plan takes longer to achieve the same, we return equals to trigger a collision,
         // discarding the new but worse plan.
-        return this.constructPlan().totalDistance() >= state.constructPlan().totalDistance();
+        return this.constructPlan().totalDistance() > state.constructPlan().totalDistance();
     }
 }
