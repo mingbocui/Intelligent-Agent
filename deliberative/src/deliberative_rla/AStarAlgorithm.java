@@ -5,6 +5,7 @@ import logist.task.Task;
 import logist.task.TaskSet;
 import logist.topology.Topology.City;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Predicate;
@@ -53,14 +54,16 @@ public class AStarAlgorithm implements IAlgorithm {
         var startTime = LocalDateTime.now();
         
         while (!stateQueue.isEmpty()) {
-            System.out.println("depth " + reachedDepth + " starts");
-            //stateQueue.stream().forEach(s->{System.out.println(s.getAStarDistance());});
+            System.out.println("depth " + reachedDepth + " starting. currently taking " + Utils.humanReadableFormat(Duration.between(startTime, LocalDateTime.now())));
             
             AStarState currentState = stateQueue.poll();
             System.out.println("state located in city " + currentState.city.name + " with current tasks " + currentState.currentTasks.size()
-                    + ", with completed tasks " + currentState.completedTasks.size() + ", with unpicked tasks " + currentState.unpickedTasks.size());
-            if (currentState.completedTasks.containsAll(newTasks))
+                    + ", with completed tasks " + currentState.completedTasks.size() + ", with unpicked tasks " + currentState.unpickedTasks.size()
+                    + ", in total we have " + stateQueue.size() + " elements to process");
+            // early stopping if a solution has been found
+            if (currentState.completedTasks.containsAll(newTasks)) {
                 return currentState.constructPlan();
+            }
             
             // Spawn new states
             List<AStarState> succ;
@@ -81,21 +84,25 @@ public class AStarAlgorithm implements IAlgorithm {
                             .map(s::moveTo)
                             .filter(Predicate.not(State::hasUselessCircle)))
                     .collect(Collectors.toList());
+    
+            System.out.println("I have " + succ.size() + " new states");
             
             succ.removeIf(allStates::contains);
             allStates.addAll(succ);
+            stateQueue.addAll(succ);
             
-            if (!visitedStates.containsKey(currentState)) {
-                visitedStates.put(currentState, currentState.getAStarDistance());
-                stateQueue.addAll(succ);
-            } else if (visitedStates.get(currentState) >= currentState.getAStarDistance()) {
-                visitedStates.replace(currentState, currentState.getAStarDistance());
-            }
+            //if (!visitedStates.containsKey(currentState)) {
+            //    visitedStates.put(currentState, currentState.getAStarDistance());
+            //    stateQueue.addAll(succ);
+            //} else if (visitedStates.get(currentState) >= currentState.getAStarDistance()) {
+            //    visitedStates.replace(currentState, currentState.getAStarDistance());
+            //}
             
             System.out.println("depth " + reachedDepth + " ended \n");
             reachedDepth++;
-            
         }
+        System.out.println("did not find a solution");
+        
         return Plan.EMPTY;
     }
 }
