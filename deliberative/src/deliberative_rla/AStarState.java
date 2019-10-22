@@ -14,12 +14,12 @@ public class AStarState extends State {
 
     public AStarState(City startingCity, TaskSet carryingTasks, TaskSet newTasks) {
         super(startingCity, carryingTasks, newTasks);
-        
+
         this.unpickedTasks = new ArrayList<>(newTasks);
         this.unpickedTasks.removeAll(this.currentTasks);
         this.unpickedTasks.removeAll(this.completedTasks);
     }
-    
+
     public AStarState(AStarState other) {
         super(other);
         initialCity = other.initialCity;
@@ -29,10 +29,10 @@ public class AStarState extends State {
         completedTasks = new ArrayList<>(other.completedTasks);
         unpickedTasks = new ArrayList<>(other.unpickedTasks);
     }
-    
+
     public AStarState(State other, List unpickedTasks) {
         super(other);
-        
+
         this.unpickedTasks = new ArrayList<>(unpickedTasks);
     }
 
@@ -44,23 +44,23 @@ public class AStarState extends State {
                     .mapToDouble(t -> this.city.distanceTo(t.deliveryCity))
                     .max()
                     .getAsDouble();
-            
+
             if (dist < maxDistanceToNextDelivery) {
                 dist = maxDistanceToNextDelivery;
             }
         }
-        
+
         if (this.unpickedTasks.size() > 0) {
             double maxDistanceToUnpickedTask = this.unpickedTasks.stream()
                     .mapToDouble(t -> this.city.distanceTo(t.pickupCity) + t.pathLength())
                     .max()
                     .getAsDouble();
-            
+
             if (dist < maxDistanceToUnpickedTask) {
                 dist = maxDistanceToUnpickedTask;
             }
         }
-        
+
         return dist;
     }
 
@@ -69,27 +69,27 @@ public class AStarState extends State {
 
         return gScore + calculateHeuristic();
     }
-    
+
     @Override
     public AStarState moveTo(City city) {
         AStarState s = new AStarState(super.moveTo(city), unpickedTasks);
         s.unpickedTasks.removeIf(s.completedTasks::contains);
         return s;
     }
-    
+
     @Override
     public AStarState pickUp(Set<Task> tasks, long capacity) {
         //double cost = AStarDistance - calculateHeuristic(); // getting original cost g(n)
         State s = super.pickUp(tasks, capacity);
-        
+
         if (s != null) {
             // get the g value in the formula of g(n) + f(n) before update the tasks;
             AStarState as = new AStarState(s, unpickedTasks);
             as.unpickedTasks.removeIf(tasks::contains);
-            
+
             return as;
         }
-        
+
         return null;
     }
 
@@ -99,18 +99,18 @@ public class AStarState extends State {
     public int hashCode() {
         return Objects.hash(this.unpickedTasks, this.completedTasks, this.currentTasks, this.city);
     }
-    
+
     // This is the check for the "circle".
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
         if (!(obj instanceof State)) return false;
         State state = (State) obj;
-        
+
         // just sanity checks, should not be necessary
         if (this.city != state.city) return false;
         if (this.hashCode() != state.hashCode()) return false;
-        
+
         // basically if the plan takes longer to achieve the same, we return equals to trigger a collision,
         // discarding the new but worse plan.
         return this.constructPlan().totalDistance() >= state.constructPlan().totalDistance();

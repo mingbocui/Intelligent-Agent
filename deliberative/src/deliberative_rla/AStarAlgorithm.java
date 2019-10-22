@@ -14,12 +14,12 @@ import java.util.stream.Collectors;
 public class AStarAlgorithm implements IAlgorithm {
     private int capacity;
     private long costPerKm;
-    
+
     public AStarAlgorithm(int capacity, long costPerKm) {
         this.capacity = capacity;
         this.costPerKm = costPerKm;
     }
-    
+
     /**
      * The basic idea is:
      * - at each state the agent can:
@@ -42,15 +42,15 @@ public class AStarAlgorithm implements IAlgorithm {
 
         // this includes the power set of the available tasks
         HashMap<City, Set<Set<Task>>> tasksPerCity = Utils.taskPerCity(newTasks);
-        
+
         long reachedDepth = 0;
-        
+
         var startTime = LocalDateTime.now();
-        
+
         while (!stateQueue.isEmpty()) {
             System.out.println("depth " + reachedDepth + " starting. currently taking "
                     + Utils.humanReadableFormat(Duration.between(startTime, LocalDateTime.now())));
-            
+
             AStarState currentState = stateQueue.poll();
 
             System.out.println("state located in city " + currentState.city.name + " with current tasks "
@@ -62,7 +62,7 @@ public class AStarAlgorithm implements IAlgorithm {
             if (currentState.completedTasks.containsAll(newTasks)) {
                 return currentState.constructPlan();
             }
-            
+
             // Spawn new states
             List<AStarState> succ;
             if (tasksPerCity.containsKey(currentState.city)) {
@@ -71,29 +71,26 @@ public class AStarAlgorithm implements IAlgorithm {
                         .map(ts -> currentState.pickUp(ts, this.capacity))
                         .filter(Objects::nonNull)
                         .collect(Collectors.toList());
-                
+
                 succ.add(currentState);
             } else {
                 succ = List.of(currentState);
             }
-            
+
             succ = succ.stream()
                     .flatMap(s -> s.city.neighbors().stream()
                             .map(s::moveTo)
                             .filter(Predicate.not(State::hasUselessCircle)))
                     .collect(Collectors.toList());
-    
-            System.out.println("I have " + succ.size() + " new states");
-            
+
+
             succ.removeIf(allStates::contains);
             allStates.addAll(succ);
             stateQueue.addAll(succ);
-
-            System.out.println("depth " + reachedDepth + " ended \n");
             reachedDepth++;
         }
         System.out.println("did not find a solution");
-        
+
         return Plan.EMPTY;
     }
 }

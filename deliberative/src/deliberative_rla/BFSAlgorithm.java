@@ -15,12 +15,12 @@ import java.util.stream.Collectors;
 public class BFSAlgorithm implements IAlgorithm {
     private int capacity;
     private long costPerKm;
-    
+
     public BFSAlgorithm(int capacity, long costPerKm) {
         this.capacity = capacity;
         this.costPerKm = costPerKm;
     }
-    
+
     /**
      * The basic idea is:
      * - at each state the agent can:
@@ -38,14 +38,14 @@ public class BFSAlgorithm implements IAlgorithm {
     public Plan optimalPlan(City startingCity, TaskSet carryingTasks, TaskSet newTasks) {
         Set<State> allStates = new HashSet<>();
         Set<State> statesToProcess = Set.of(new State(startingCity, carryingTasks));
-        
+
         // this includes the power set of the available tasks
         HashMap<Topology.City, Set<Set<Task>>> tasksPerCity = Utils.taskPerCity(newTasks);
-        
+
         long reachedDepth = 0;
-        
+
         var startTime = LocalDateTime.now();
-        
+
         // 1. build tree
         while (!statesToProcess.isEmpty()) {
             // 1.1.1. picking up packages (if available)
@@ -58,56 +58,56 @@ public class BFSAlgorithm implements IAlgorithm {
                             .map(ts -> s.pickUp(ts, this.capacity))
                             .filter(Objects::nonNull))
                     .collect(Collectors.toList());
-            
+
             // 1.1.2. don't pick anything up
             pickedUpStates.addAll(statesToProcess);
-            
+
             // 1.1.3. moving to a new city
             List<State> nextStatesToProcess = pickedUpStates.parallelStream()
                     .flatMap(s -> s.city.neighbors().stream()
                             .map(s::moveTo)
                             .filter(ns -> !Utils.hasUselessCircle(ns)))
                     .collect(Collectors.toList());
-            
+
             var dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
             System.out.print(">>> " + dtf.format(LocalDateTime.now()) + " >>> in depth " + reachedDepth
                     + " new states pre / post circle & duplicate detection " + nextStatesToProcess.size() + " / ");
-            
+
             // 1.2.1. remove duplicates and circles
             nextStatesToProcess.removeIf(allStates::contains);
-            
+
             System.out.println(nextStatesToProcess.size());
-            
+
             // 1.2.2. keeping track of all new states, used for "circle detection"
             // Note that our implementation of hashCode and equals has been overwritten, now only states with
             // a lower cost but same result will be added to the set.
             allStates.addAll(nextStatesToProcess);
-            
+
             // 1.2.3. we don't need to spawn new states originating from these ones which already completed all tasks
             statesToProcess = nextStatesToProcess.parallelStream()
                     .filter(s -> !s.completedTasks.containsAll(newTasks))
                     .collect(Collectors.toSet());
-            
+
             reachedDepth += 1;
-            
+
             System.out.println("In depth " + reachedDepth + ", total nb of states: "
                     + allStates.size() + " new states to check: " + nextStatesToProcess.size());
-            
+
             var theChosenOne = nextStatesToProcess.stream()
                     .filter(s -> s.completedTasks.containsAll(newTasks))
                     .max(Comparator.comparing(s -> s.profit(this.costPerKm)));
-            
+
             if (theChosenOne.isPresent()) {
                 printReport(theChosenOne.get(), reachedDepth, allStates.size(), startTime);
                 return theChosenOne.get().constructPlan();
             }
         }
-        
+
         // 2. getting best plan, taking the one with max profit
         var theChosenOne = allStates.stream()
                 .filter(s -> s.completedTasks.containsAll(newTasks))
                 .max(Comparator.comparing(s -> s.profit(this.costPerKm)));
-        
+
         if (theChosenOne.isPresent()) {
             printReport(theChosenOne.get(), reachedDepth, allStates.size(), startTime);
             return theChosenOne.get().constructPlan();
@@ -115,7 +115,7 @@ public class BFSAlgorithm implements IAlgorithm {
             throw new IllegalStateException("woops");
         }
     }
-    
+
     private void printReport(State goal, long reachedDepth, long nStates, LocalDateTime startTime) {
         System.out.print("reached goal at depth: " + reachedDepth);
         System.out.print(", total nb of states: " + nStates);
