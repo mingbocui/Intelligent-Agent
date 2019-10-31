@@ -21,9 +21,18 @@ public class Solution {
     }
 
     // TODO assign the task to the closest vehicle
+    // maybe need create another vehicle class for updating the reduced capacity
     public Solution initialSolution(List<Vehicle> allVehicles, TaskSet allTasks){
         Map<Vehicle, List<AgentAction>> vehicleMapToActions = new HashMap<>();
+        // should also incoporate the vehicle into the AgentAction??????
         allVehicles.stream().forEach(vehicle -> {vehicleMapToActions.put(vehicle, new ArrayList<AgentAction>());});
+        for(Task task : allTasks){
+
+        }
+        return null;
+    }
+
+    public Vehicle closestVehicle(City taskCity, List<Vehicle>){
         return null;
     }
 
