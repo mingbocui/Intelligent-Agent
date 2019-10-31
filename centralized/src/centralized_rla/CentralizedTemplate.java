@@ -1,13 +1,11 @@
-package template;
+package centralized_rla;
 
 //the list of imports
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
+
 import logist.LogistSettings;
 
-import logist.Measures;
-import logist.behavior.AuctionBehavior;
 import logist.behavior.CentralizedBehavior;
 import logist.agent.Agent;
 import logist.config.Parsers;
@@ -40,7 +38,7 @@ public class CentralizedTemplate implements CentralizedBehavior {
         // this code is used to get the timeouts
         LogistSettings ls = null;
         try {
-            ls = Parsers.parseSettings("config" + File.separator + "settings_default.xml");
+            ls = Parsers.parseSettings("config/settings_default.xml");
         }
         catch (Exception exc) {
             System.out.println("There was a problem loading the configuration file.");
