@@ -1,30 +1,29 @@
 package centralized_rla;
 
 //the list of imports
-import java.util.ArrayList;
-import java.util.List;
 
 import logist.LogistSettings;
-
-import logist.behavior.CentralizedBehavior;
 import logist.agent.Agent;
+import logist.behavior.CentralizedBehavior;
 import logist.config.Parsers;
-import logist.simulation.Vehicle;
 import logist.plan.Plan;
+import logist.simulation.Vehicle;
 import logist.task.Task;
 import logist.task.TaskDistribution;
 import logist.task.TaskSet;
 import logist.topology.Topology;
 import logist.topology.Topology.City;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * A very simple auction agent that assigns all tasks to its first vehicle and
  * handles them sequentially.
- *
  */
 @SuppressWarnings("unused")
 public class CentralizedTemplate implements CentralizedBehavior {
-
+    
     private Topology topology;
     private TaskDistribution distribution;
     private Agent agent;
@@ -33,14 +32,13 @@ public class CentralizedTemplate implements CentralizedBehavior {
     
     @Override
     public void setup(Topology topology, TaskDistribution distribution,
-            Agent agent) {
+                      Agent agent) {
         
         // this code is used to get the timeouts
         LogistSettings ls = null;
         try {
             ls = Parsers.parseSettings("config/settings_default.xml");
-        }
-        catch (Exception exc) {
+        } catch (Exception exc) {
             System.out.println("There was a problem loading the configuration file.");
         }
         
@@ -53,14 +51,14 @@ public class CentralizedTemplate implements CentralizedBehavior {
         this.distribution = distribution;
         this.agent = agent;
     }
-
+    
     @Override
     public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
         long time_start = System.currentTimeMillis();
-        
+
 //		System.out.println("Agent " + agent.id() + " has tasks " + tasks);
         Plan planVehicle1 = naivePlan(vehicles.get(0), tasks);
-
+        
         List<Plan> plans = new ArrayList<Plan>();
         plans.add(planVehicle1);
         while (plans.size() < vehicles.size()) {
@@ -73,26 +71,26 @@ public class CentralizedTemplate implements CentralizedBehavior {
         
         return plans;
     }
-
+    
     private Plan naivePlan(Vehicle vehicle, TaskSet tasks) {
         City current = vehicle.getCurrentCity();
         Plan plan = new Plan(current);
-
+        
         for (Task task : tasks) {
             // move: current city => pickup location
             for (City city : current.pathTo(task.pickupCity)) {
                 plan.appendMove(city);
             }
-
+            
             plan.appendPickup(task);
-
+            
             // move: pickup location => delivery location
             for (City city : task.path()) {
                 plan.appendMove(city);
             }
-
+            
             plan.appendDelivery(task);
-
+            
             // set current city
             current = task.deliveryCity;
         }
