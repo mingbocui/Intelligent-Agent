@@ -56,6 +56,7 @@ public class CentralizedAgent implements CentralizedBehavior {
         SolutionSpace prev = new SolutionSpace(initSpace);
         int nIterations = 0;
         
+        // TODO it should also return something if we're running out of time
         while(!convergenceReached(nIterations, prev, initSpace)) {
             if (nIterations % 10 == 0) {
                 System.out.println("nIters " + nIterations);
@@ -69,9 +70,10 @@ public class CentralizedAgent implements CentralizedBehavior {
             
             prev = initSpace;
             initSpace = newSolutions.stream().min(Comparator.comparingDouble(SolutionSpace::cost)).get();
+            System.out.println("current cost " + initSpace.cost());
             nIterations += 1;
         }
-        System.out.println("found sol after " + nIterations + " iters");
+        System.out.println("found sol after " + nIterations + " iters, cost " + initSpace.cost());
         
         return initSpace.getPlans();
     }

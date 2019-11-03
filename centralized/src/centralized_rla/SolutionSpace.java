@@ -7,6 +7,7 @@ import logist.task.TaskSet;
 import logist.topology.Topology;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -84,9 +85,8 @@ public class SolutionSpace {
                 // Generation of new solutions
                 for (int j = 0; j < vehiclePlan.actionTasks.size(); j++) {
                     SolutionSpace sol = new SolutionSpace(this);
-                    
-                    var action = sol.vehiclePlans.get(i).actionTasks.remove(pos);
-                    sol.vehiclePlans.get(i).actionTasks.add(j, action);
+    
+                    Collections.swap(sol.vehiclePlans.get(i).actionTasks, pos, j);
                     
                     newSolutions.add(sol);
                 }
@@ -173,22 +173,44 @@ public class SolutionSpace {
         }
         
         public List<Task> getTasks() {
-            return actionTasks.stream().filter(t -> t.isDelivery()).map(t -> t.getTask()).collect(Collectors.toList());
+            return actionTasks.stream().filter(ActionTask::isDelivery).map(ActionTask::getTask).collect(Collectors.toList());
         }
         
-        public boolean passesConstraints() {
+        private boolean allPickUpsBeforeDeliveries() {
             for (int i = 0; i < actionTasks.size(); i++) {
                 if (actionTasks.get(i).isDelivery()) {
                     final var at = actionTasks.get(i);
                     final int pickUpIdx = IntStream.range(0, i).filter(idx -> actionTasks.get(idx).isPickup() && actionTasks.get(idx).getTask().equals(at.getTask())).findFirst().orElse(i);
-                    
+            
                     if (pickUpIdx >= i) {
                         return false;
                     }
                 }
             }
-            
+    
             return true;
+        }
+        
+        private boolean loadCapacityViolated() {
+            int currentLoad = 0;
+            
+            for (final var t : actionTasks) {
+                if (t.isPickup()) {
+                    currentLoad += t.getTask().weight;
+                    
+                    if (currentLoad > vehicle.capacity()) {
+                        return true;
+                    }
+                } else {
+                    currentLoad -= t.getTask().weight;
+                }
+            }
+            
+            return false;
+        }
+    
+        public boolean passesConstraints() {
+            return allPickUpsBeforeDeliveries() && !loadCapacityViolated();
         }
         
         public double cost() {
