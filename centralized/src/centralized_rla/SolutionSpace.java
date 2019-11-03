@@ -6,10 +6,7 @@ import logist.task.Task;
 import logist.task.TaskSet;
 import logist.topology.Topology;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -41,18 +38,47 @@ public class SolutionSpace {
             as.add(ActionTask.pickup(t));
             as.add(ActionTask.delivery(t));
         }
-        
-        sol.vehiclePlans.add(new VehiclePlan(vehicles.get(0), as));
+       sol.vehiclePlans.add(new VehiclePlan(vehicles.get(0), as));
+
         for (int i = 1; i < vehicles.size(); i++) {
             sol.vehiclePlans.add(new VehiclePlan(vehicles.get(i), new ArrayList<>()));
         }
         
         return sol;
     }
+
+    public SolutionSpace initSolution(List<Vehicle> vehicles, TaskSet tasks) {
+        var sol = new SolutionSpace(vehicles, tasks);
+
+        List<ActionTask> as = new ArrayList<>();
+        for (final var t : tasks) {
+            as.add(ActionTask.pickup(t));
+            as.add(ActionTask.delivery(t));
+        }
+
+        // find the biggest vehicle, should not behave different from naiveSolution
+        int biggestCapacity = -1;
+        int biggestVehicleId = 0;
+        for(int i = 0; i < vehicles.size(); i++){
+            if(biggestCapacity < vehicles.get(i).capacity()){
+                biggestCapacity = vehicles.get(i).capacity();
+                biggestVehicleId = i;
+            }
+        }
+
+        for (int i = 0; i < vehicles.size(); i++) {
+            if(i == biggestVehicleId) sol.vehiclePlans.add(new VehiclePlan(vehicles.get(i), as));
+            else sol.vehiclePlans.add(new VehiclePlan(vehicles.get(i), new ArrayList<>()));
+        }
+
+        return sol;
+    }
+
     
     public SolutionSpace randomSolution(List<Vehicle> vehicles, TaskSet tasks) {
         // TODO implement this
-        return naiveSolution(vehicles, tasks);
+        // as suggested in the slide, "Give all the tasks to the biggest vehicle"
+        return initSolution(vehicles, tasks);
     }
     
     public double totalMinSpanTreeLength() {
@@ -84,7 +110,7 @@ public class SolutionSpace {
             for (int pos = 0; pos < vehiclePlan.actionTasks.size(); pos++) {
                 // Generation of new solutions
                 for (int j = 0; j < vehiclePlan.actionTasks.size(); j++) {
-                    SolutionSpace sol = new SolutionSpace(this);
+                    SolutionSpace sol = new SolutionSpace(this); //
     
                     Collections.swap(sol.vehiclePlans.get(i).actionTasks, pos, j);
                     
