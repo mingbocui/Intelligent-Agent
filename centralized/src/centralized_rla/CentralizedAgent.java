@@ -13,7 +13,9 @@ import logist.topology.Topology;
 import logist.topology.Topology.City;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.function.Predicate;
 
 /**
  * A very simple auction agent that assigns all tasks to its first vehicle and
@@ -50,48 +52,32 @@ public class CentralizedAgent implements CentralizedBehavior {
     
     @Override
     public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
-        return new SolutionSpace().naiveSolution(vehicles, tasks).getPlans();
+        SolutionSpace initSpace = new SolutionSpace(vehicles, tasks).randomSolution(vehicles, tasks);
+        SolutionSpace prev = new SolutionSpace(initSpace);
+        int nIterations = 0;
         
+        while(!convergenceReached(nIterations, prev, initSpace)) {
+            if (nIterations % 10 == 0) {
+                System.out.println("nIters " + nIterations);
+            }
+            List<SolutionSpace> newSolutions = new ArrayList<>();
+            newSolutions.add(initSpace);
+            initSpace.changeVehicle().forEach(s -> newSolutions.addAll(s.permuteActions()));
+            
+            newSolutions.removeIf(Predicate.not(SolutionSpace::passesConstraints));
+            System.out.println("we have " + newSolutions.size() + " new sols");
+            
+            prev = initSpace;
+            initSpace = newSolutions.stream().min(Comparator.comparingDouble(SolutionSpace::cost)).get();
+            nIterations += 1;
+        }
+        System.out.println("found sol after " + nIterations + " iters");
         
-    //    long time_start = System.currentTimeMillis();
-
-//	//	System.out.println("Agent " + agent.id() + " has tasks " + tasks);
-    //    Plan planVehicle1 = naivePlan(vehicles.get(0), tasks);
-    //
-    //    List<Plan> plans = new ArrayList<Plan>();
-    //    plans.add(planVehicle1);
-    //    while (plans.size() < vehicles.size()) {
-    //        plans.add(Plan.EMPTY);
-    //    }
-    //
-    //    long duration = System.currentTimeMillis() - time_start;
-    //    System.out.println("The plan was generated in " + duration + " milliseconds.");
-    //
-    //    return plans;
+        return initSpace.getPlans();
     }
     
-    private Plan naivePlan(Vehicle vehicle, TaskSet tasks) {
-        City current = vehicle.getCurrentCity();
-        Plan plan = new Plan(current);
-        
-        for (Task task : tasks) {
-            // move: current city => pickup location
-            for (City city : current.pathTo(task.pickupCity)) {
-                plan.appendMove(city);
-            }
-            
-            plan.appendPickup(task);
-            
-            // move: pickup location => delivery location
-            for (City city : task.path()) {
-                plan.appendMove(city);
-            }
-            
-            plan.appendDelivery(task);
-            
-            // set current city
-            current = task.deliveryCity;
-        }
-        return plan;
+    private boolean convergenceReached(int nIterations, SolutionSpace prev, SolutionSpace current) {
+        if (nIterations > 100) return true;
+        else return nIterations > 3 && Math.abs(current.cost() - prev.cost()) < 0.5;
     }
 }
