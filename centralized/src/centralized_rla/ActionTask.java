@@ -1,18 +1,23 @@
 package centralized_rla;
 
 import logist.task.Task;
-import logist.topology.Topology.City;
-
-import java.util.Objects;
 
 
-public class AgentAction {
+public class ActionTask {
     private Task task;
     private ActionType actionType;
     
-    public AgentAction(ActionType actionType, Task task) {
+    public ActionTask(Task task, ActionType actionType) {
         this.task = task;
         this.actionType = actionType;
+    }
+    
+    public static ActionTask pickup(Task task) {
+        return new ActionTask(task, ActionType.PICKUP);
+    }
+    
+    public static ActionTask delivery(Task task) {
+        return new ActionTask(task, ActionType.DELIVERY);
     }
     
     public boolean isPickup() {

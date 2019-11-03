@@ -43,6 +43,7 @@ public class StochasticLocalSearch {
      *  maybe just without time?
      *
      */
+    /*
     public List encoding(int nTasks, int nVehicles) {
         List nextTask = new ArrayList<TaskEncoded>();
         for (int i = 0; i < nTasks ; i++) {
@@ -65,6 +66,14 @@ i               nextTask.add(new TaskEncoded(i, ActionType.DELIVERY));
         
         return nextTask;
     }
+    
+    public List<SolutionSpace> chooseNeighbours(SolutionSpace old) {
+        
+        
+        
+        return null
+    }
+    
     
     
     private List<Plan> initialSolution() {
@@ -92,4 +101,6 @@ i               nextTask.add(new TaskEncoded(i, ActionType.DELIVERY));
     private boolean terminationConditionMet() {
         return false;
     }
+    
+     */
 }
