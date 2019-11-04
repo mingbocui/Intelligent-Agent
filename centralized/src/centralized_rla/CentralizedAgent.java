@@ -16,8 +16,7 @@ import java.util.Random;
 import java.util.function.Predicate;
 
 /**
- * A very simple auction agent that assigns all tasks to its first vehicle and
- * handles them sequentially.
+ * Current best solution (without selecting random solutions): 178 iters, cost 21060.5, profit: 1782682.5
  */
 public class CentralizedAgent implements CentralizedBehavior {
     private double randomSolutionSelection;
@@ -71,7 +70,11 @@ public class CentralizedAgent implements CentralizedBehavior {
             
             // TODO not sure if we should activate this, if I set it to false it sometimes get's as low as 21386.0
             // we select the randomly best value above... but our approach could be too greedily ...
-            if (false && rnd.nextDouble() < this.randomSolutionSelection) {
+            // this returns a cost of 21334 and a profit of 1782509
+            boolean stuck = candidateSolutions.size() >= this.nRetainedSolutions
+                    && candidateSolutions.stream().mapToDouble(SolutionSpace::cost).distinct().limit(2).count() <= 1
+                    && minSols.size() == 1;
+            if (stuck && rnd.nextDouble() < this.randomSolutionSelection) {
                 System.out.println("\tselecting random sol");
                 initSpace = newSolutions.get(rnd.nextInt(newSolutions.size()));
             } else {
@@ -90,11 +93,12 @@ public class CentralizedAgent implements CentralizedBehavior {
             if (candidateSolutions.size() > this.nRetainedSolutions) candidateSolutions.remove(0);
             // java... what is this shit? we need to the copy otherwise the compiler complains
             SolutionSpace finalInitSpace = initSpace;
-            if (candidateSolutions.stream().allMatch(s -> s.cost() < finalInitSpace.cost())) {
+            if (candidateSolutions.size() >= this.nRetainedSolutions && candidateSolutions.stream().allMatch(s -> s.cost() < finalInitSpace.cost())) {
                 System.out.print("\t*** restarting search using old best solution, proposed sol has cost of: " + finalInitSpace.cost() + ", saved costs: ");
                 candidateSolutions.forEach(c -> System.out.print(c.cost() + ", "));
                 System.out.println();
                 initSpace = currentBest;
+                candidateSolutions.clear();
             }
             /*
             // in case we're somehow stuck, but since we select a random best solution (out of the minimal ones),
