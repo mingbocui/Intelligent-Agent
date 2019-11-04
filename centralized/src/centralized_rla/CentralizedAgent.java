@@ -11,6 +11,7 @@ import logist.task.TaskSet;
 import logist.topology.Topology;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.function.Predicate;
@@ -92,16 +93,18 @@ public class CentralizedAgent implements CentralizedBehavior {
             //      cost 19618
             //  *** found sol after 197 iters, cost 21760.0 profit: 1781983.0
             //  *** found sol after 183 iters, cost 19111.0 profit: 1784632.0
+            //
+            //  *** found solution after 90 iterations, combinedCost (cost): 1.81207077E7 (18732.5), lowest so far: 1785010.5
             boolean stuck = candidateSolutions.size() >= this.nRetainedSolutions
                     && candidateSolutions.stream().mapToDouble(SolutionSpace::combinedCost).distinct().limit(2).count() <= 1;
             boolean chooseRandom = false;
             if (stuck || rnd.nextDouble() < this.randomSolutionSelection) {
-                System.out.println("\tselecting random sol");
                 if (!currentMinSolutions.isEmpty()) {
-                    System.out.println("\t*selecting sol from queue, " + currentMinSolutions.size() + " left to explore");
+                    System.out.println("\tselecting sol from queue, " + currentMinSolutions.size() + " left to explore");
                     initSpace = currentMinSolutions.get(rnd.nextInt(currentMinSolutions.size()));
                     currentMinSolutions.remove(initSpace);
                 } else {
+                    System.out.println("\tselecting random sol");
                     initSpace = newSolutions.get(rnd.nextInt(newSolutions.size()));
                 }
                 chooseRandom = true;
@@ -113,8 +116,9 @@ public class CentralizedAgent implements CentralizedBehavior {
                 initSpace = newBest;
                 
                 if (minSols.get(0).combinedCost() < currentBest.combinedCost()) {
-                    currentMinSolutions = minSols;
-                    currentMinSolutions.remove(newBest);
+                    for (int i = 0; i < Math.min(10, minSols.size()); i++) {
+                        currentMinSolutions.add(minSols.get(rnd.nextInt(minSols.size())));
+                    }
                 }
             }
             
