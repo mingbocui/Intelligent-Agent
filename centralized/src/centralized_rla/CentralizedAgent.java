@@ -13,6 +13,7 @@ import logist.topology.Topology;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Random;
 import java.util.function.Predicate;
 
 /**
@@ -20,9 +21,11 @@ import java.util.function.Predicate;
  * handles them sequentially.
  */
 public class CentralizedAgent implements CentralizedBehavior {
-    private double keepSolutionProbability;
+    private double randomSolutionSelection;
     private long timeoutPlan;
     private long maxIterations;
+    private int nRetainedSolutions;
+    private Random rnd;
     
     @Override
     public void setup(Topology topology, TaskDistribution distribution, Agent agent) {
@@ -36,51 +39,87 @@ public class CentralizedAgent implements CentralizedBehavior {
         this.timeoutPlan = ls.get(LogistSettings.TimeoutKey.PLAN);
         
         // As suggested from the slides, 0.3 to 0.5 would be a good choice for p.
-        this.keepSolutionProbability = agent.readProperty("keep-solution-probability", Double.class, 0.35);
+        this.randomSolutionSelection = agent.readProperty("random-solution-selection", Double.class, 0.35);
         this.maxIterations = agent.readProperty("max-iterations", Integer.class, 300);
+        this.nRetainedSolutions = agent.readProperty("nb-retained-solutions", Integer.class, 10);
+        this.rnd = new Random();
     }
     
     @Override
     public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
         long startTime = System.currentTimeMillis();
         SolutionSpace initSpace = new SolutionSpace(vehicles, tasks).largestVehicleSolution(vehicles, tasks);
-        SolutionSpace prev = new SolutionSpace(initSpace);
+        List<SolutionSpace> candidateSolutions = new ArrayList<>(List.of(initSpace));
         int nIterations = 0;
         
-        while (!outOfTime(startTime, nIterations) && !convergenceReached(nIterations, prev, initSpace)) {
+        SolutionSpace currentBest = new SolutionSpace(initSpace);
+        
+        while (true) {
             System.out.println(">>> in iteration " + nIterations);
-            if (Math.random() > 1 - this.keepSolutionProbability) {
-                System.out.println("\tselecting original plan");
-            } else {
-                prev = initSpace;
-                List<SolutionSpace> newSolutions = new ArrayList<>();
-                // now new solutions do not contain initial solution
-                // TODO I still think it should be added
-                initSpace.changeVehicle().forEach(s -> newSolutions.addAll(s.permuteActions()));
-                
-                newSolutions.removeIf(Predicate.not(SolutionSpace::passesConstraints));
-                System.out.println("\twe have " + newSolutions.size() + " new sols");
-                
-                // this is the localChoice
-                initSpace = newSolutions.stream().min(Comparator.comparingDouble(SolutionSpace::cost)).get();
-                System.out.println("\tselecting new plan");
+            List<SolutionSpace> newSolutions = new ArrayList<>(List.of(initSpace));
+            initSpace.changeVehicle().forEach(s -> newSolutions.addAll(s.permuteActions()));
+            
+            newSolutions.removeIf(Predicate.not(SolutionSpace::passesConstraints));
+            System.out.println("\twe have " + newSolutions.size() + " new sols");
+            
+            var newBest = newSolutions.stream().min(Comparator.comparingDouble(SolutionSpace::cost)).get();
+            
+            if (newBest.cost() < currentBest.cost()) {
+                currentBest = newBest;
             }
             
-            System.out.println("\tcurrent cost " + initSpace.cost());
+            if (rnd.nextDouble() < this.randomSolutionSelection) {
+                System.out.println("\tselecting random sol");
+                initSpace = newSolutions.get(rnd.nextInt(newSolutions.size()));
+            } else {
+                System.out.println("\tselecting best sol");
+                initSpace = newBest;
+            }
+            
+            System.out.println("\tcurrent cost " + initSpace.cost() + ", lowest so far " + currentBest.cost());
             
             nIterations += 1;
+            
+            if (nIterations > this.maxIterations || outOfTime(startTime, nIterations)) {
+                System.out.println("\tmax iterations reached or out of time");
+                break;
+            }
+            if (candidateSolutions.size() > this.nRetainedSolutions) candidateSolutions.remove(0);
+            // java... what is this shit? we need to the copy otherwise the compiler complains
+            SolutionSpace finalInitSpace = initSpace;
+            if (candidateSolutions.stream().allMatch(s -> s.cost() < finalInitSpace.cost())) {
+                System.out.print("\t*** restarting search using old best solution, proposed sol has cost of: " + finalInitSpace.cost() + ", saved costs: ");
+                candidateSolutions.forEach(c -> System.out.print(c.cost() + ", "));
+                System.out.println();
+                initSpace = currentBest;
+            }
+            // in case we're somehow stuck
+            if (candidateSolutions.size() == this.nRetainedSolutions && candidateSolutions.stream().mapToDouble(SolutionSpace::cost).distinct().limit(2).count() <= 1) {
+                System.out.println("\tstuck in a loop");
+                break;
+            }
+            candidateSolutions.add(initSpace);
         }
         
-        System.out.println("*** found sol after " + nIterations + " iters, cost " + initSpace.cost());
+        System.out.println("*** found sol after " + nIterations + " iters, cost " + currentBest.cost());
         
-        return initSpace.getPlans();
+        return currentBest.getPlans();
     }
     
-    private boolean convergenceReached(int nIterations, SolutionSpace prev, SolutionSpace current) {
-        // TODO if prev == current && nIterations > 3 we have a problem...
+    /*
+    private boolean convergenceReached(int nIterations) {
         if (nIterations > this.maxIterations) return true;
+        
+        // just drop the first, we only keep the last 10 entries
+        if (this.candidateSolutions.size() > 10) this.candidateSolutions.remove(0);
+        
+        final var lastSol = this.candidateSolutions.get(this.candidateSolutions.size() - 1).cost();
+        
+        // TODO if prev == current && nIterations > 3 we have a problem...
         else return nIterations > 3 && Math.abs(current.cost() - prev.cost()) < 0.5;
     }
+    
+     */
     
     private boolean outOfTime(long startTime, int nIterations) {
         if (nIterations == 0) return false;

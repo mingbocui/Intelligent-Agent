@@ -12,8 +12,9 @@
 	<agent name="centralized-rla">
 		<set class-path="bin/"/>
 		<set class-name="centralized_rla.CentralizedAgent"/>
-		<set keep-solution-probability="0.35"/>
+		<set random-solution-selection="0.35"/>
 		<set max-iterations="300"/>
+		<set nb-retained-solutions="10"/>
 	</agent>
 
 </agents>
