@@ -5,8 +5,7 @@ import logist.simulation.Vehicle;
 import logist.task.Task;
 import logist.topology.Topology;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -64,6 +63,10 @@ class VehiclePlan {
         return getPlan().totalDistance() * vehicle.costPerKm();
     }
     
+    public double combinedCost() {
+        return cost() * spanningTreeLength();
+    }
+    
     public Plan getPlan() {
         if (actionTasks.isEmpty()) return Plan.EMPTY;
         
@@ -113,5 +116,53 @@ class VehiclePlan {
     
     public double profit() {
         return this.getTasks().stream().mapToDouble(t -> t.reward).sum() - this.cost();
+    }
+    
+    public double spanningTreeLength() {
+        // using kruskal
+        Set<Topology.City> citiesToVisit = new HashSet<>(Set.of(vehicle.homeCity()));
+        getTasks().forEach(t -> citiesToVisit.addAll(List.of(t.pickupCity, t.deliveryCity)));
+        
+        List<Edge> edges = new ArrayList<>();
+        for (final var cityA : citiesToVisit) {
+            for (final var cityB : citiesToVisit) {
+                if (cityA != cityB) {
+                    edges.add(new Edge(cityA, cityB));
+                }
+            }
+        }
+        
+        List<Edge> chosenEdges = new ArrayList<>();
+        for (final var edge : edges) {
+            Set<Topology.City> exploredCities = chosenEdges.stream().flatMap(t -> t.getCities().stream()).collect(Collectors.toSet());
+            
+            if (exploredCities.containsAll(citiesToVisit)) break;
+            
+            if (!exploredCities.containsAll(edge.getCities())) {
+                chosenEdges.add(edge);
+            }
+        }
+        
+        return chosenEdges.stream().mapToDouble(Edge::getDist).sum();
+    }
+    
+    private class Edge {
+        public Topology.City start;
+        public Topology.City end;
+        public double dist;
+    
+        public Edge(Topology.City start, Topology.City end) {
+            this.start = start;
+            this.end = end;
+            this.dist = start.distanceTo(end);
+        }
+    
+        public double getDist() {
+            return dist;
+        }
+        
+        public List<Topology.City> getCities() {
+            return new ArrayList<>(List.of(start, end));
+        }
     }
 }

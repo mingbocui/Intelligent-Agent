@@ -15,14 +15,13 @@ import java.util.List;
 import java.util.Random;
 import java.util.function.Predicate;
 
-/**
- * Current best solution (without selecting random solutions): 178 iters, cost 21060.5, profit: 1782682.5
- */
 public class CentralizedAgent implements CentralizedBehavior {
     private double randomSolutionSelection;
     private long timeoutPlan;
     private long maxIterations;
     private int nRetainedSolutions;
+    private boolean useSpanningTreeForCost;
+    private boolean useRandomInitSolution;
     private Random rnd;
     
     @Override
@@ -40,13 +39,23 @@ public class CentralizedAgent implements CentralizedBehavior {
         this.randomSolutionSelection = agent.readProperty("random-solution-selection", Double.class, 0.35);
         this.maxIterations = agent.readProperty("max-iterations", Integer.class, 300);
         this.nRetainedSolutions = agent.readProperty("nb-retained-solutions", Integer.class, 10);
+        this.useSpanningTreeForCost = agent.readProperty("use-spanning-tree-for-cost", Boolean.class, false);
+        this.useRandomInitSolution = agent.readProperty("use-random-init-solution", Boolean.class, false);
         this.rnd = new Random();
     }
     
     @Override
     public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
         long startTime = System.currentTimeMillis();
-        SolutionSpace initSpace = new SolutionSpace(vehicles, tasks).largestVehicleSolution(vehicles, tasks);
+        SolutionSpace initSpace;
+        if (this.useRandomInitSolution) {
+            System.out.println("Using random init solution");
+            initSpace = SolutionSpace.randomSolution(vehicles, tasks, this.useSpanningTreeForCost);
+        } else {
+            System.out.println("Using largest vehicle init solution");
+            initSpace = SolutionSpace.largestVehicleSolution(vehicles, tasks, this.useSpanningTreeForCost);
+        }
+        
         List<SolutionSpace> candidateSolutions = new ArrayList<>(List.of(initSpace));
         int nIterations = 0;
         
@@ -64,13 +73,9 @@ public class CentralizedAgent implements CentralizedBehavior {
             System.out.println("\tfound " + minSols.size() + " new min solutions");
             var newBest = minSols.get(rnd.nextInt(minSols.size()));
             
-            if (newBest.cost() < currentBest.cost()) {
-                currentBest = newBest;
-            }
-            
             // TODO not sure if we should activate this, if I set it to false it sometimes get's as low as 21386.0
             // we select the randomly best value above... but our approach could be too greedily ...
-            // this returns a cost of 21334 and a profit of 1782509
+            // this returns a combinedCost of 21334 and a profit of 1782509
             // with this off it finds this:
             //  *** found sol after 180 iters, cost 21386.0 profit: 1782357.0
             //  *** found sol after 202 iters, cost 21794.0 profit: 1781949.0
@@ -79,7 +84,7 @@ public class CentralizedAgent implements CentralizedBehavior {
             //  *** found sol after 197 iters, cost 21760.0 profit: 1781983.0
             //  *** found sol after 183 iters, cost 19111.0 profit: 1784632.0
             boolean stuck = candidateSolutions.size() >= this.nRetainedSolutions
-                    && candidateSolutions.stream().mapToDouble(SolutionSpace::cost).distinct().limit(2).count() <= 1
+                    && candidateSolutions.stream().mapToDouble(SolutionSpace::combinedCost).distinct().limit(2).count() <= 1
                     && minSols.size() == 1;
             boolean chooseRandom = false;
             if (stuck /*&& rnd.nextDouble() < this.randomSolutionSelection */) {
@@ -90,8 +95,13 @@ public class CentralizedAgent implements CentralizedBehavior {
                 System.out.println("\tselecting best sol");
                 initSpace = newBest;
             }
+    
+            if (initSpace.combinedCost() < currentBest.combinedCost()) {
+                currentBest = initSpace;
+            }
             
-            System.out.println("\tcurrent cost " + initSpace.cost() + ", lowest so far " + currentBest.cost());
+            System.out.println(String.format("\tcurrent combinedCost (cost): %s (%s), lowest so far: %s",
+                    initSpace.combinedCost(), initSpace.cost(), currentBest.combinedCost()));
             
             nIterations += 1;
             
@@ -100,11 +110,13 @@ public class CentralizedAgent implements CentralizedBehavior {
                 break;
             }
             if (candidateSolutions.size() > this.nRetainedSolutions) candidateSolutions.remove(0);
-            // java... what is this shit? we need to the copy otherwise the compiler complains
+            // java... what is this shit? we need to do the copy otherwise the compiler complains
             SolutionSpace finalInitSpace = initSpace;
-            if (candidateSolutions.size() >= this.nRetainedSolutions && !chooseRandom && candidateSolutions.stream().allMatch(s -> s.cost() < finalInitSpace.cost())) {
-                System.out.print("\t*** restarting search using old best solution, proposed sol has cost of: " + finalInitSpace.cost() + ", saved costs: ");
-                candidateSolutions.forEach(c -> System.out.print(c.cost() + ", "));
+            if (candidateSolutions.size() >= this.nRetainedSolutions
+                    && !chooseRandom
+                    && candidateSolutions.stream().allMatch(s -> s.combinedCost() < finalInitSpace.combinedCost())) {
+                System.out.print("\t*** restarting search using old best solution, proposed sol has combinedCost of: " + finalInitSpace.combinedCost() + ", saved combinedCosts: ");
+                candidateSolutions.forEach(c -> System.out.print(c.combinedCost() + ", "));
                 System.out.println();
                 initSpace = currentBest;
                 candidateSolutions.clear();
@@ -112,15 +124,16 @@ public class CentralizedAgent implements CentralizedBehavior {
             /*
             // in case we're somehow stuck, but since we select a random best solution (out of the minimal ones),
             // we can in theory break out of the loop, somehow -> best to leave it and hope
-            if (candidateSolutions.size() == this.nRetainedSolutions && candidateSolutions.stream().mapToDouble(SolutionSpace::cost).distinct().limit(2).count() <= 1) {
+            if (candidateSolutions.size() == this.nRetainedSolutions && candidateSolutions.stream().mapToDouble(SolutionSpace::combinedCost).distinct().limit(2).count() <= 1) {
                 System.out.println("\tstuck in a loop");
                 break;
             }
              */
             candidateSolutions.add(initSpace);
         }
-        
-        System.out.println("*** found sol after " + nIterations + " iters, cost " + currentBest.cost() + " profit: " + currentBest.profit());
+    
+        System.out.println(String.format("*** found solution after %d iterations, combinedCost (cost): %s (%s), lowest so far: %s",
+                nIterations, currentBest.combinedCost(), currentBest.cost(), currentBest.profit()));
         
         return currentBest.getPlans();
     }

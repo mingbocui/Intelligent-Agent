@@ -2,6 +2,7 @@ package centralized_rla;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Utils {
     public static List<SolutionSpace> minimalElements(List<SolutionSpace> sols) {
@@ -9,11 +10,11 @@ public class Utils {
         List<SolutionSpace> minElements = new ArrayList<>();
         
         for (final var sol : sols) {
-            if (sol.cost() < currentMinCost) {
+            if (sol.combinedCost() < currentMinCost) {
                 minElements.clear();
                 minElements.add(sol);
-                currentMinCost = sol.cost();
-            } else if (sol.cost() == currentMinCost) {
+                currentMinCost = sol.combinedCost();
+            } else if (sol.combinedCost() == currentMinCost) {
                 minElements.add(sol);
             }
         }

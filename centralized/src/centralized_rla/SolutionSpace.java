@@ -2,10 +2,12 @@ package centralized_rla;
 
 import logist.plan.Plan;
 import logist.simulation.Vehicle;
+import logist.task.Task;
 import logist.task.TaskSet;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -15,11 +17,13 @@ public class SolutionSpace {
     private List<VehiclePlan> vehiclePlans;
     private List<Vehicle> vehicles;
     private TaskSet tasks;
+    private boolean useSpanningTreeForCost;
     
-    public SolutionSpace(List<Vehicle> vehicles, TaskSet tasks) {
+    public SolutionSpace(List<Vehicle> vehicles, TaskSet tasks, boolean useSpanningTreeForCost) {
         this.vehicles = vehicles;
         this.tasks = tasks;
         this.vehiclePlans = new ArrayList<>();
+        this.useSpanningTreeForCost = useSpanningTreeForCost;
     }
     
     public SolutionSpace(SolutionSpace solutionSpace) {
@@ -28,6 +32,7 @@ public class SolutionSpace {
         this.vehiclePlans = solutionSpace.vehiclePlans.stream()
                 .map(t -> new VehiclePlan(t.vehicle, new ArrayList<ActionTask>(t.actionTasks)))
                 .collect(Collectors.toList());
+        this.useSpanningTreeForCost = solutionSpace.useSpanningTreeForCost;
     }
     
     /**
@@ -37,8 +42,8 @@ public class SolutionSpace {
      * @param tasks
      * @return
      */
-    public SolutionSpace largestVehicleSolution(List<Vehicle> vehicles, TaskSet tasks) {
-        var sol = new SolutionSpace(vehicles, tasks);
+    public static SolutionSpace largestVehicleSolution(List<Vehicle> vehicles, TaskSet tasks, boolean useSpanningTreeForCost) {
+        var sol = new SolutionSpace(vehicles, tasks, useSpanningTreeForCost);
         
         List<ActionTask> as = new ArrayList<>();
         for (final var t : tasks) {
@@ -51,7 +56,7 @@ public class SolutionSpace {
                 .reduce((a, b) -> vehicles.get(a).capacity() > vehicles.get(b).capacity() ? a : b)
                 .orElse(-1);
         
-        System.out.println("selected largest vehicle with id: " + biggestVehicleId + " and capacity " + vehicles.get(biggestVehicleId).capacity());
+        System.out.println("selected largest vehicle with id: " + biggestVehicleId + " and capacity " + sol.vehicles.get(biggestVehicleId).capacity());
         
         for (int i = 0; i < vehicles.size(); i++) {
             if (i == biggestVehicleId) sol.vehiclePlans.add(new VehiclePlan(vehicles.get(i), as));
@@ -61,10 +66,81 @@ public class SolutionSpace {
         return sol;
     }
     
-    public double totalMinSpanTreeLength() {
-        // TODO use this for the local selection
-        // TODO implement this
-        return 0.0;
+    public static SolutionSpace randomSolution(List<Vehicle> vehicles, TaskSet tasks, boolean useSpanningTreeForCost) {
+        var sol = new SolutionSpace(vehicles, tasks, useSpanningTreeForCost);
+        List<List<ActionTask>> as = new ArrayList<>();
+        List<Integer> weightSoFar = new ArrayList<>();
+        vehicles.forEach(v -> {
+            as.add(new ArrayList<>());
+            weightSoFar.add(0);
+        });
+        List<Task> taskList = new ArrayList<>(tasks);
+        Collections.shuffle(taskList);
+        
+        int currVehicleId = 0;
+        for (final Task t : taskList) {
+            while (weightSoFar.get(currVehicleId) + t.weight > vehicles.get(currVehicleId).capacity()) {
+                currVehicleId = (currVehicleId + 1) % vehicles.size();
+            }
+            
+            weightSoFar.set(currVehicleId, weightSoFar.get(currVehicleId) + t.weight);
+            as.get(currVehicleId).add(ActionTask.pickup(t));
+            as.get(currVehicleId).add(ActionTask.delivery(t));
+            
+            currVehicleId = (currVehicleId + 1) % (vehicles.size());
+        }
+    
+        for (int i = 0; i < vehicles.size(); i++) {
+            sol.vehiclePlans.add(new VehiclePlan(vehicles.get(i), as.get(i)));
+        }
+    
+        return sol;
+    }
+    
+    /*
+    public static SolutionSpace assignClosestTasks(List<Vehicle> vehicles, TaskSet tasks, boolean useSpanningTreeForCost) {
+        var sol = new SolutionSpace(vehicles, tasks, useSpanningTreeForCost);
+        List<List<ActionTask>> as = new ArrayList<>();
+        List<Integer> weightSoFar = new ArrayList<>();
+        vehicles.forEach(v -> {
+            as.add(new ArrayList<>());
+            weightSoFar.add(0);
+        });
+        List<Task> taskList = new ArrayList<>(tasks);
+        Collections.shuffle(taskList);
+    
+        for (final Task t : taskList) {
+            vehicles.sort(Comparator.comparingDouble(v -> v.homeCity().distanceTo(t.pickupCity)));
+            int currVehicleId = 0;
+            
+            while (weightSoFar.get(currVehicleId) + t.weight > vehicles.get(currVehicleId).capacity()) {
+                currVehicleId = (currVehicleId + 1) % vehicles.size();
+            }
+        
+            weightSoFar.set(currVehicleId, weightSoFar.get(currVehicleId) + t.weight);
+            as.get(currVehicleId).add(ActionTask.pickup(t));
+            as.get(currVehicleId).add(ActionTask.delivery(t));
+        
+            currVehicleId = (currVehicleId + 1) % (vehicles.size());
+        }
+    
+        for (int i = 0; i < vehicles.size(); i++) {
+            sol.vehiclePlans.add(new VehiclePlan(vehicles.get(i), as.get(i)));
+        }
+    
+        return sol;
+    }*/
+    
+    public double combinedCost() {
+        if (this.useSpanningTreeForCost) {
+            return vehiclePlans.stream().mapToDouble(VehiclePlan::combinedCost).sum();
+        } else {
+            return this.cost();
+        }
+    }
+    
+    public double spanningTreeLength() {
+        return vehiclePlans.stream().mapToDouble(VehiclePlan::spanningTreeLength).sum();
     }
     
     public double cost() {
