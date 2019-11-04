@@ -110,4 +110,8 @@ class VehiclePlan {
             return current.pathTo(target);
         }
     }
+    
+    public double profit() {
+        return this.getTasks().stream().mapToDouble(t -> t.reward).sum() - this.cost();
+    }
 }

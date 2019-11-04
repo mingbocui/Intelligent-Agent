@@ -10,7 +10,8 @@ public class Utils {
         
         for (final var sol : sols) {
             if (sol.cost() < currentMinCost) {
-                minElements = new ArrayList<>(List.of(sol));
+                minElements.clear();
+                minElements.add(sol);
                 currentMinCost = sol.cost();
             } else if (sol.cost() == currentMinCost) {
                 minElements.add(sol);

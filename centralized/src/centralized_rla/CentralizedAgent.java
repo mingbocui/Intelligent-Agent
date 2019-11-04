@@ -62,14 +62,16 @@ public class CentralizedAgent implements CentralizedBehavior {
             System.out.println("\twe have " + newSolutions.size() + " new sols");
             
             var minSols = Utils.minimalElements(newSolutions);
-            System.out.println("\tfound " + minSols.size() + " new min solutions, will pick a random one");
+            System.out.println("\tfound " + minSols.size() + " new min solutions");
             var newBest = minSols.get(rnd.nextInt(minSols.size()));
             
             if (newBest.cost() < currentBest.cost()) {
                 currentBest = newBest;
             }
             
-            if (rnd.nextDouble() < this.randomSolutionSelection) {
+            // TODO not sure if we should activate this, if I set it to false it sometimes get's as low as 21386.0
+            // we select the randomly best value above... but our approach could be too greedily ...
+            if (false && rnd.nextDouble() < this.randomSolutionSelection) {
                 System.out.println("\tselecting random sol");
                 initSpace = newSolutions.get(rnd.nextInt(newSolutions.size()));
             } else {
@@ -94,33 +96,22 @@ public class CentralizedAgent implements CentralizedBehavior {
                 System.out.println();
                 initSpace = currentBest;
             }
-            // in case we're somehow stuck
+            // in case we're somehow stuck, but since we select a random best solution,
+            // we can in theory break out of the loop, somehow -> best to leave it and hope
+            /*
             if (candidateSolutions.size() == this.nRetainedSolutions && candidateSolutions.stream().mapToDouble(SolutionSpace::cost).distinct().limit(2).count() <= 1) {
                 System.out.println("\tstuck in a loop");
                 break;
             }
+            
+             */
             candidateSolutions.add(initSpace);
         }
         
-        System.out.println("*** found sol after " + nIterations + " iters, cost " + currentBest.cost());
+        System.out.println("*** found sol after " + nIterations + " iters, cost " + currentBest.cost() + " profit: " + currentBest.profit());
         
         return currentBest.getPlans();
     }
-    
-    /*
-    private boolean convergenceReached(int nIterations) {
-        if (nIterations > this.maxIterations) return true;
-        
-        // just drop the first, we only keep the last 10 entries
-        if (this.candidateSolutions.size() > 10) this.candidateSolutions.remove(0);
-        
-        final var lastSol = this.candidateSolutions.get(this.candidateSolutions.size() - 1).cost();
-        
-        // TODO if prev == current && nIterations > 3 we have a problem...
-        else return nIterations > 3 && Math.abs(current.cost() - prev.cost()) < 0.5;
-    }
-    
-     */
     
     private boolean outOfTime(long startTime, int nIterations) {
         if (nIterations == 0) return false;

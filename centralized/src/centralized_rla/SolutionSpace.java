@@ -71,6 +71,10 @@ public class SolutionSpace {
         return vehiclePlans.stream().mapToDouble(VehiclePlan::cost).sum();
     }
     
+    public double profit() {
+        return vehiclePlans.stream().mapToDouble(VehiclePlan::profit).sum();
+    }
+    
     public boolean passesConstraints() {
         boolean allCool = true;
         
