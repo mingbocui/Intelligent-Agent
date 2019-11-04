@@ -95,9 +95,15 @@ public class CentralizedAgent implements CentralizedBehavior {
             boolean stuck = candidateSolutions.size() >= this.nRetainedSolutions
                     && candidateSolutions.stream().mapToDouble(SolutionSpace::combinedCost).distinct().limit(2).count() <= 1;
             boolean chooseRandom = false;
-            if (stuck && rnd.nextDouble() < this.randomSolutionSelection) {
+            if (stuck || rnd.nextDouble() < this.randomSolutionSelection) {
                 System.out.println("\tselecting random sol");
-                initSpace = newSolutions.get(rnd.nextInt(newSolutions.size()));
+                if (!currentMinSolutions.isEmpty()) {
+                    System.out.println("\t*selecting sol from queue, " + currentMinSolutions.size() + " left to explore");
+                    initSpace = currentMinSolutions.get(rnd.nextInt(currentMinSolutions.size()));
+                    currentMinSolutions.remove(initSpace);
+                } else {
+                    initSpace = newSolutions.get(rnd.nextInt(newSolutions.size()));
+                }
                 chooseRandom = true;
             } else {
                 var minSols = Utils.minimalElements(newSolutions);
@@ -105,6 +111,11 @@ public class CentralizedAgent implements CentralizedBehavior {
                 var newBest = minSols.get(rnd.nextInt(minSols.size()));
                 System.out.println("\tselecting best sol");
                 initSpace = newBest;
+                
+                if (minSols.get(0).combinedCost() < currentBest.combinedCost()) {
+                    currentMinSolutions = minSols;
+                    currentMinSolutions.remove(newBest);
+                }
             }
             
             if (initSpace.combinedCost() < currentBest.combinedCost()) {

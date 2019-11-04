@@ -14,7 +14,7 @@
 		<set class-name="centralized_rla.CentralizedAgent"/>
 		<set random-seed="1337121666"/>
 		<set random-solution-selection="0.15"/>
-		<set nb-retained-solutions="10"/>
+		<set nb-retained-solutions="4"/>
 		<set use-spanning-tree-for-cost="false"/>
 		<set use-random-init-solution="false"/>
 		<set use-closest-pickup-solution="true"/>
