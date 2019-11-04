@@ -96,14 +96,13 @@ public class CentralizedAgent implements CentralizedBehavior {
                 System.out.println();
                 initSpace = currentBest;
             }
-            // in case we're somehow stuck, but since we select a random best solution,
-            // we can in theory break out of the loop, somehow -> best to leave it and hope
             /*
+            // in case we're somehow stuck, but since we select a random best solution (out of the minimal ones),
+            // we can in theory break out of the loop, somehow -> best to leave it and hope
             if (candidateSolutions.size() == this.nRetainedSolutions && candidateSolutions.stream().mapToDouble(SolutionSpace::cost).distinct().limit(2).count() <= 1) {
                 System.out.println("\tstuck in a loop");
                 break;
             }
-            
              */
             candidateSolutions.add(initSpace);
         }
