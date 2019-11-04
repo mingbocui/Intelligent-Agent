@@ -2,7 +2,7 @@
 
 <agents>
 	<!-- A list of agents and their behavior classes -->
-	
+
 	<!-- #### CENTRALIZED AGENTS ### -->
 	<agent name="centralized-random">
 		<set class-path="bin/"/>
@@ -12,6 +12,8 @@
 	<agent name="centralized-rla">
 		<set class-path="bin/"/>
 		<set class-name="centralized_rla.CentralizedAgent"/>
+		<set keep-solution-probability="0.35"/>
+		<set max-iterations="300"/>
 	</agent>
-	
+
 </agents>

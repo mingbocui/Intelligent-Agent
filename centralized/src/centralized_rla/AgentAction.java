@@ -1,9 +1,6 @@
 package centralized_rla;
 
 import logist.task.Task;
-import logist.topology.Topology.City;
-
-import java.util.Objects;
 
 
 public class AgentAction {
@@ -26,7 +23,7 @@ public class AgentAction {
     public Task getTask() {
         return task;
     }
-
+    
     public ActionType getActionType() {
         return actionType;
     }

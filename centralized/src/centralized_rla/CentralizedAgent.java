@@ -6,11 +6,9 @@ import logist.behavior.CentralizedBehavior;
 import logist.config.Parsers;
 import logist.plan.Plan;
 import logist.simulation.Vehicle;
-import logist.task.Task;
 import logist.task.TaskDistribution;
 import logist.task.TaskSet;
 import logist.topology.Topology;
-import logist.topology.Topology.City;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -22,19 +20,12 @@ import java.util.function.Predicate;
  * handles them sequentially.
  */
 public class CentralizedAgent implements CentralizedBehavior {
-    private Topology topology;
-    private TaskDistribution distribution;
-    private Agent agent;
-    private long timeout_setup;
-    private long timeout_plan;
-    private final double prop = 0.35; // As suggested from the slides, 0.3 to 0.5 would be a good choice for p.
-
-
+    private double keepSolutionProbability;
+    private long timeoutPlan;
+    private long maxIterations;
+    
     @Override
-    public void setup(Topology topology, TaskDistribution distribution,
-                      Agent agent) {
-        
-        // this code is used to get the timeouts
+    public void setup(Topology topology, TaskDistribution distribution, Agent agent) {
         LogistSettings ls = null;
         try {
             ls = Parsers.parseSettings("config/settings_default.xml");
@@ -42,101 +33,62 @@ public class CentralizedAgent implements CentralizedBehavior {
             System.out.println("There was a problem loading the configuration file.");
         }
         
-        // the setup method cannot last more than timeout_setup milliseconds
-        timeout_setup = ls.get(LogistSettings.TimeoutKey.SETUP);
-        // the plan method cannot execute more than timeout_plan milliseconds
-        timeout_plan = ls.get(LogistSettings.TimeoutKey.PLAN);
+        this.timeoutPlan = ls.get(LogistSettings.TimeoutKey.PLAN);
         
-        this.topology = topology;
-        this.distribution = distribution;
-        this.agent = agent;
+        // As suggested from the slides, 0.3 to 0.5 would be a good choice for p.
+        this.keepSolutionProbability = agent.readProperty("keep-solution-probability", Double.class, 0.35);
+        this.maxIterations = agent.readProperty("max-iterations", Integer.class, 300);
     }
     
-//    @Override
-//    public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
-//        SolutionSpace initSpace = new SolutionSpace(vehicles, tasks).randomSolution(vehicles, tasks);
-//        SolutionSpace prev = new SolutionSpace(initSpace);
-//        int nIterations = 0;
-//        long startTime = System.currentTimeMillis();
-//
-//        // TODO we have a time limit here to find the best solution
-////      while(!convergenceReached(nIterations, prev, initSpace)) {
-//        while(!outOfTime(startTime) && !convergenceReached(nIterations, prev, initSpace)){
-//            if (nIterations % 10 == 0) {
-//                System.out.println("nIters " + nIterations);
-//            }
-//            List<SolutionSpace> newSolutions = new ArrayList<>();
-//            newSolutions.add(initSpace);
-//            initSpace.changeVehicle().forEach(s -> newSolutions.addAll(s.permuteActions()));
-//
-//            newSolutions.removeIf(Predicate.not(SolutionSpace::passesConstraints));
-//            System.out.println("we have " + newSolutions.size() + " new sols");
-//
-//            prev = initSpace;
-//            initSpace = newSolutions.stream().min(Comparator.comparingDouble(SolutionSpace::cost)).get();
-//            System.out.println("current cost " + initSpace.cost());
-//            nIterations += 1;
-//        }
-//        System.out.println("found sol after " + nIterations + " iters, cost " + initSpace.cost());
-//
-//        return initSpace.getPlans();
-//    }
-
     @Override
     public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
-        SolutionSpace initSpace = new SolutionSpace(vehicles, tasks).randomSolution(vehicles, tasks);
+        long startTime = System.currentTimeMillis();
+        SolutionSpace initSpace = new SolutionSpace(vehicles, tasks).largestVehicleSolution(vehicles, tasks);
         SolutionSpace prev = new SolutionSpace(initSpace);
         int nIterations = 0;
-
-        long startTime = System.currentTimeMillis();
-        // TODO it should also return something if we're running out of time
-        while(!outOfTime(startTime) && !convergenceReached(nIterations, prev, initSpace)){
-            if (nIterations % 10 == 0) {
-                System.out.println("nIters " + nIterations);
+        
+        while (!outOfTime(startTime, nIterations) && !convergenceReached(nIterations, prev, initSpace)) {
+            System.out.println(">>> in iteration " + nIterations);
+            if (Math.random() > 1 - this.keepSolutionProbability) {
+                System.out.println("\tselecting original plan");
+            } else {
+                prev = initSpace;
+                List<SolutionSpace> newSolutions = new ArrayList<>();
+                // now new solutions do not contain initial solution
+                // TODO I still think it should be added
+                initSpace.changeVehicle().forEach(s -> newSolutions.addAll(s.permuteActions()));
+                
+                newSolutions.removeIf(Predicate.not(SolutionSpace::passesConstraints));
+                System.out.println("\twe have " + newSolutions.size() + " new sols");
+                
+                // this is the localChoice
+                initSpace = newSolutions.stream().min(Comparator.comparingDouble(SolutionSpace::cost)).get();
+                System.out.println("\tselecting new plan");
             }
-            initSpace = localChoice(initSpace);
+            
+            System.out.println("\tcurrent cost " + initSpace.cost());
+            
             nIterations += 1;
         }
-        System.out.println("found sol after " + nIterations + " iters, cost " + initSpace.cost());
-
+        
+        System.out.println("*** found sol after " + nIterations + " iters, cost " + initSpace.cost());
+        
         return initSpace.getPlans();
     }
-
-
     
     private boolean convergenceReached(int nIterations, SolutionSpace prev, SolutionSpace current) {
-        if (nIterations > 100) return true;
+        // TODO if prev == current && nIterations > 3 we have a problem...
+        if (nIterations > this.maxIterations) return true;
         else return nIterations > 3 && Math.abs(current.cost() - prev.cost()) < 0.5;
     }
-
-    public SolutionSpace localChoice(SolutionSpace initSpace){
-
-        List<SolutionSpace> newSolutions = new ArrayList<>();
-        SolutionSpace prev = new SolutionSpace(initSpace);
-
-        //now new solutions do not contain initial solution
-        initSpace.changeVehicle().forEach(s -> newSolutions.addAll(s.permuteActions()));
-
-        newSolutions.removeIf(Predicate.not(SolutionSpace::passesConstraints));
-        System.out.println("we have " + newSolutions.size() + " new sols");
-
-        if(Math.random() > 1 - prop){
-            System.out.println("Selected the original plan, current cost " + prev.cost());
-            return prev;
-        }
-        else {
-            initSpace = newSolutions.stream().min(Comparator.comparingDouble(SolutionSpace::cost)).get();
-            System.out.println("Selected the best neighbor plan,current cost " + initSpace.cost());
-            return initSpace;
-        }
-
-    }
-
-    private boolean outOfTime(long startTime){
-        long epsilon = 3000; //avoid the timeout warning generated by logist platform
+    
+    private boolean outOfTime(long startTime, int nIterations) {
+        if (nIterations == 0) return false;
+        
         long executedTime = System.currentTimeMillis() - startTime;
-        if(executedTime < timeout_plan - epsilon) return false;
-        else return true;
+        double runTimeEstimateEachRound = (double) executedTime / nIterations;
+        
+        // just to be sure that we don't compute for too long
+        return (executedTime + runTimeEstimateEachRound * 1.3) > this.timeoutPlan;
     }
-
 }

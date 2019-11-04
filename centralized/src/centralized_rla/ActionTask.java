@@ -31,7 +31,7 @@ public class ActionTask {
     public Task getTask() {
         return task;
     }
-
+    
     public ActionType getActionType() {
         return actionType;
     }

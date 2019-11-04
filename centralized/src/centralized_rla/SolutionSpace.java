@@ -2,11 +2,11 @@ package centralized_rla;
 
 import logist.plan.Plan;
 import logist.simulation.Vehicle;
-import logist.task.Task;
 import logist.task.TaskSet;
-import logist.topology.Topology;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -30,7 +30,14 @@ public class SolutionSpace {
                 .collect(Collectors.toList());
     }
     
-    public SolutionSpace naiveSolution(List<Vehicle> vehicles, TaskSet tasks) {
+    /**
+     * as suggested in the slide, "Give all the tasks to the biggest vehicle"
+     *
+     * @param vehicles
+     * @param tasks
+     * @return
+     */
+    public SolutionSpace largestVehicleSolution(List<Vehicle> vehicles, TaskSet tasks) {
         var sol = new SolutionSpace(vehicles, tasks);
         
         List<ActionTask> as = new ArrayList<>();
@@ -38,47 +45,20 @@ public class SolutionSpace {
             as.add(ActionTask.pickup(t));
             as.add(ActionTask.delivery(t));
         }
-       sol.vehiclePlans.add(new VehiclePlan(vehicles.get(0), as));
-
-        for (int i = 1; i < vehicles.size(); i++) {
-            sol.vehiclePlans.add(new VehiclePlan(vehicles.get(i), new ArrayList<>()));
-        }
         
-        return sol;
-    }
-
-    public SolutionSpace initSolution(List<Vehicle> vehicles, TaskSet tasks) {
-        var sol = new SolutionSpace(vehicles, tasks);
-
-        List<ActionTask> as = new ArrayList<>();
-        for (final var t : tasks) {
-            as.add(ActionTask.pickup(t));
-            as.add(ActionTask.delivery(t));
-        }
-
         // find the biggest vehicle, should not behave different from naiveSolution
-        int biggestCapacity = -1;
-        int biggestVehicleId = 0;
-        for(int i = 0; i < vehicles.size(); i++){
-            if(biggestCapacity < vehicles.get(i).capacity()){
-                biggestCapacity = vehicles.get(i).capacity();
-                biggestVehicleId = i;
-            }
-        }
-
+        int biggestVehicleId = IntStream.range(0, vehicles.size())
+                .reduce((a, b) -> vehicles.get(a).capacity() > vehicles.get(b).capacity() ? a : b)
+                .orElse(-1);
+        
+        System.out.println("selected largest vehicle with id: " + biggestVehicleId + " and capacity " + vehicles.get(biggestVehicleId).capacity());
+        
         for (int i = 0; i < vehicles.size(); i++) {
-            if(i == biggestVehicleId) sol.vehiclePlans.add(new VehiclePlan(vehicles.get(i), as));
+            if (i == biggestVehicleId) sol.vehiclePlans.add(new VehiclePlan(vehicles.get(i), as));
             else sol.vehiclePlans.add(new VehiclePlan(vehicles.get(i), new ArrayList<>()));
         }
-
+        
         return sol;
-    }
-
-    
-    public SolutionSpace randomSolution(List<Vehicle> vehicles, TaskSet tasks) {
-        // TODO implement this
-        // as suggested in the slide, "Give all the tasks to the biggest vehicle"
-        return initSolution(vehicles, tasks);
     }
     
     public double totalMinSpanTreeLength() {
@@ -94,26 +74,27 @@ public class SolutionSpace {
     public boolean passesConstraints() {
         boolean allCool = true;
         
+        // each individual plan passes all constraints
         allCool = allCool && vehiclePlans.stream().allMatch(VehiclePlan::passesConstraints);
+        // all tasks are done
         allCool = allCool && vehiclePlans.stream().mapToInt(vp -> vp.getTasks().size()).sum() == this.tasks.size();
-
+        
         return allCool;
     }
     
     public List<SolutionSpace> permuteActions() {
         List<SolutionSpace> newSolutions = new ArrayList<>();
-    
+        
+        // sadly we need the indexes
         for (int i = 0; i < vehiclePlans.size(); i++) {
             final var vehiclePlan = vehiclePlans.get(i);
             if (vehiclePlan.getTasks().size() < 2) continue;
-    
+            
             for (int pos = 0; pos < vehiclePlan.actionTasks.size(); pos++) {
                 // Generation of new solutions
                 for (int j = 0; j < vehiclePlan.actionTasks.size(); j++) {
-                    SolutionSpace sol = new SolutionSpace(this); //
-    
+                    SolutionSpace sol = new SolutionSpace(this);
                     Collections.swap(sol.vehiclePlans.get(i).actionTasks, pos, j);
-                    
                     newSolutions.add(sol);
                 }
             }
@@ -122,10 +103,10 @@ public class SolutionSpace {
         return newSolutions;
     }
     
-    
     public List<SolutionSpace> changeVehicle() {
         List<SolutionSpace> newSolutions = new ArrayList<>();
-    
+        
+        // sadly we need the indexes
         for (int i = 0; i < vehiclePlans.size(); i++) {
             final var vp = vehiclePlans.get(i);
             for (final var task : vp.getTasks()) {
@@ -135,7 +116,7 @@ public class SolutionSpace {
                 for (int j = 0; j < vehiclePlans.size(); j++) {
                     // order of vehicles is preserved
                     if (i == j) continue;
-    
+                    
                     SolutionSpace sol = new SolutionSpace(this);
                     // removing of this task
                     sol.vehiclePlans.get(i).actionTasks = sol.vehiclePlans.get(i).actionTasks.stream()
@@ -152,113 +133,9 @@ public class SolutionSpace {
         }
         
         return newSolutions;
-        
-    }
-    
-    private List<Topology.City> shortestPath(List<ActionTask> actionTasks, Vehicle vehicle, int prevIdx, int currentIdx) {
-        Topology.City current;
-        
-        if (prevIdx < 0) {
-            current = vehicle.homeCity();
-        } else {
-            final var prevAction = actionTasks.get(prevIdx);
-            if (prevAction.isPickup()) {
-                current = prevAction.getTask().pickupCity;
-            } else {
-                current = prevAction.getTask().deliveryCity;
-            }
-        }
-        
-        final var currAction = actionTasks.get(currentIdx);
-        
-        Topology.City target;
-        if (currAction.isPickup()) {
-            target = currAction.getTask().pickupCity;
-        } else {
-            target = currAction.getTask().deliveryCity;
-        }
-        
-        if (current.equals(target)) {
-            return new ArrayList<>();
-        } else {
-            return current.pathTo(target);
-        }
     }
     
     public List<Plan> getPlans() {
         return vehiclePlans.stream().map(VehiclePlan::getPlan).collect(Collectors.toList());
-    }
-    
-    private class VehiclePlan {
-        public Vehicle vehicle;
-        public List<ActionTask> actionTasks;
-    
-        public VehiclePlan(Vehicle vehicle, List<ActionTask> actionTasks) {
-            this.vehicle = vehicle;
-            this.actionTasks = actionTasks;
-        }
-        
-        public List<Task> getTasks() {
-            return actionTasks.stream().filter(ActionTask::isDelivery).map(ActionTask::getTask).collect(Collectors.toList());
-        }
-        
-        private boolean allPickUpsBeforeDeliveries() {
-            for (int i = 0; i < actionTasks.size(); i++) {
-                if (actionTasks.get(i).isDelivery()) {
-                    final var at = actionTasks.get(i);
-                    final int pickUpIdx = IntStream.range(0, i).filter(idx -> actionTasks.get(idx).isPickup() && actionTasks.get(idx).getTask().equals(at.getTask())).findFirst().orElse(i);
-            
-                    if (pickUpIdx >= i) {
-                        return false;
-                    }
-                }
-            }
-    
-            return true;
-        }
-        
-        private boolean loadCapacityViolated() {
-            int currentLoad = 0;
-            
-            for (final var t : actionTasks) {
-                if (t.isPickup()) {
-                    currentLoad += t.getTask().weight;
-                    
-                    if (currentLoad > vehicle.capacity()) {
-                        return true;
-                    }
-                } else {
-                    currentLoad -= t.getTask().weight;
-                }
-            }
-            
-            return false;
-        }
-    
-        public boolean passesConstraints() {
-            return allPickUpsBeforeDeliveries() && !loadCapacityViolated();
-        }
-        
-        public double cost() {
-            return getPlan().totalDistance() * vehicle.costPerKm();
-        }
-    
-        public Plan getPlan() {
-            if (actionTasks.isEmpty()) return Plan.EMPTY;
-            
-            Plan plan = new Plan(vehicle.homeCity());
-    
-            for (int i = 0, prev = -1; i < actionTasks.size(); i++, prev++) {
-                shortestPath(actionTasks, vehicle, prev, i).forEach(plan::appendMove);
-                if (actionTasks.get(i).isPickup()) {
-                    plan.appendPickup(actionTasks.get(i).getTask());
-                } else {
-                    plan.appendDelivery(actionTasks.get(i).getTask());
-                }
-            }
-            
-            return plan;
-        }
-    
     }
 }
