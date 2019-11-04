@@ -5,7 +5,10 @@ import logist.simulation.Vehicle;
 import logist.task.Task;
 import logist.topology.Topology;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -150,13 +153,13 @@ class VehiclePlan {
         public Topology.City start;
         public Topology.City end;
         public double dist;
-    
+        
         public Edge(Topology.City start, Topology.City end) {
             this.start = start;
             this.end = end;
             this.dist = start.distanceTo(end);
         }
-    
+        
         public double getDist() {
             return dist;
         }

@@ -89,16 +89,31 @@ public class SolutionSpace {
             
             currVehicleId = (currVehicleId + 1) % (vehicles.size());
         }
-    
+        
         for (int i = 0; i < vehicles.size(); i++) {
             sol.vehiclePlans.add(new VehiclePlan(vehicles.get(i), as.get(i)));
         }
-    
+        
         return sol;
     }
     
-    /*
-    public static SolutionSpace assignClosestTasks(List<Vehicle> vehicles, TaskSet tasks, boolean useSpanningTreeForCost) {
+    public static SolutionSpace assignClosestTasksByPickup(List<Vehicle> vehicles, TaskSet tasks, boolean useSpanningTreeForCost) {
+        return assignClosestTasks(vehicles, tasks, useSpanningTreeForCost, false);
+    }
+    
+    public static SolutionSpace assignClosestTasksByDelivery(List<Vehicle> vehicles, TaskSet tasks, boolean useSpanningTreeForCost) {
+        return assignClosestTasks(vehicles, tasks, useSpanningTreeForCost, false);
+    }
+    
+    /**
+     * assigns the tasks to the vehicle which is closest to the pickup
+     *
+     * @param vehicles
+     * @param tasks
+     * @param useSpanningTreeForCost
+     * @return
+     */
+    public static SolutionSpace assignClosestTasks(List<Vehicle> vehicles, TaskSet tasks, boolean useSpanningTreeForCost, boolean usePickUp) {
         var sol = new SolutionSpace(vehicles, tasks, useSpanningTreeForCost);
         List<List<ActionTask>> as = new ArrayList<>();
         List<Integer> weightSoFar = new ArrayList<>();
@@ -108,28 +123,38 @@ public class SolutionSpace {
         });
         List<Task> taskList = new ArrayList<>(tasks);
         Collections.shuffle(taskList);
-    
+        
         for (final Task t : taskList) {
-            vehicles.sort(Comparator.comparingDouble(v -> v.homeCity().distanceTo(t.pickupCity)));
-            int currVehicleId = 0;
+            List<Integer> idxCitiesByDist;
+            if (usePickUp) {
+                idxCitiesByDist = IntStream.range(0, vehicles.size()).boxed()
+                        .sorted(Comparator.comparingDouble(i -> vehicles.get(i).homeCity().distanceTo(t.pickupCity)))
+                        .collect(Collectors.toList());
+            } else {
+                idxCitiesByDist = IntStream.range(0, vehicles.size()).boxed()
+                        .sorted(Comparator.comparingDouble(i -> vehicles.get(i).homeCity().distanceTo(t.deliveryCity)))
+                        .collect(Collectors.toList());
+            }
+            
+            int idxIdx = 0;
+            int currVehicleId = idxCitiesByDist.get(idxIdx);
             
             while (weightSoFar.get(currVehicleId) + t.weight > vehicles.get(currVehicleId).capacity()) {
-                currVehicleId = (currVehicleId + 1) % vehicles.size();
+                idxIdx += 1;
+                currVehicleId = idxCitiesByDist.get(idxIdx);
             }
-        
+            
             weightSoFar.set(currVehicleId, weightSoFar.get(currVehicleId) + t.weight);
             as.get(currVehicleId).add(ActionTask.pickup(t));
             as.get(currVehicleId).add(ActionTask.delivery(t));
-        
-            currVehicleId = (currVehicleId + 1) % (vehicles.size());
         }
-    
+        
         for (int i = 0; i < vehicles.size(); i++) {
             sol.vehiclePlans.add(new VehiclePlan(vehicles.get(i), as.get(i)));
         }
-    
+        
         return sol;
-    }*/
+    }
     
     public double combinedCost() {
         if (this.useSpanningTreeForCost) {

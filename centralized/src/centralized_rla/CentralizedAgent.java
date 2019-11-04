@@ -22,6 +22,8 @@ public class CentralizedAgent implements CentralizedBehavior {
     private int nRetainedSolutions;
     private boolean useSpanningTreeForCost;
     private boolean useRandomInitSolution;
+    private boolean useClosestPickUpSolution;
+    private boolean useClosestPickUpSolutionByPickup;
     private Random rnd;
     
     @Override
@@ -39,9 +41,11 @@ public class CentralizedAgent implements CentralizedBehavior {
         this.randomSolutionSelection = agent.readProperty("random-solution-selection", Double.class, 0.35);
         this.maxIterations = agent.readProperty("max-iterations", Integer.class, 300);
         this.nRetainedSolutions = agent.readProperty("nb-retained-solutions", Integer.class, 10);
-        this.useSpanningTreeForCost = agent.readProperty("use-spanning-tree-for-cost", Boolean.class, false);
+        this.useSpanningTreeForCost = agent.readProperty("use-spanning-tree-for-cost", Boolean.class, true);
         this.useRandomInitSolution = agent.readProperty("use-random-init-solution", Boolean.class, false);
-        this.rnd = new Random();
+        this.useClosestPickUpSolution = agent.readProperty("use-closest-pickup-solution", Boolean.class, true);
+        this.useClosestPickUpSolutionByPickup = agent.readProperty("use-closest-pickup-solution-by-pickup", Boolean.class, true);
+        this.rnd = new Random(agent.readProperty("random-seed", Integer.class, 42));
     }
     
     @Override
@@ -51,6 +55,14 @@ public class CentralizedAgent implements CentralizedBehavior {
         if (this.useRandomInitSolution) {
             System.out.println("Using random init solution");
             initSpace = SolutionSpace.randomSolution(vehicles, tasks, this.useSpanningTreeForCost);
+        } else if (this.useClosestPickUpSolution) {
+            if (this.useClosestPickUpSolutionByPickup) {
+                System.out.println("Using closest pickup solution");
+                initSpace = SolutionSpace.assignClosestTasksByPickup(vehicles, tasks, this.useSpanningTreeForCost);
+            } else {
+                System.out.println("Using closest delivery solution");
+                initSpace = SolutionSpace.assignClosestTasksByDelivery(vehicles, tasks, this.useSpanningTreeForCost);
+            }
         } else {
             System.out.println("Using largest vehicle init solution");
             initSpace = SolutionSpace.largestVehicleSolution(vehicles, tasks, this.useSpanningTreeForCost);
@@ -95,7 +107,7 @@ public class CentralizedAgent implements CentralizedBehavior {
                 System.out.println("\tselecting best sol");
                 initSpace = newBest;
             }
-    
+            
             if (initSpace.combinedCost() < currentBest.combinedCost()) {
                 currentBest = initSpace;
             }
@@ -131,7 +143,7 @@ public class CentralizedAgent implements CentralizedBehavior {
              */
             candidateSolutions.add(initSpace);
         }
-    
+        
         System.out.println(String.format("*** found solution after %d iterations, combinedCost (cost): %s (%s), lowest so far: %s",
                 nIterations, currentBest.combinedCost(), currentBest.cost(), currentBest.profit()));
         

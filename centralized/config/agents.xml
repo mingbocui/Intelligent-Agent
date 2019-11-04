@@ -12,11 +12,14 @@
 	<agent name="centralized-rla">
 		<set class-path="bin/"/>
 		<set class-name="centralized_rla.CentralizedAgent"/>
+		<set random-seed="42"/>
 		<set random-solution-selection="0.35"/>
 		<set max-iterations="300"/>
 		<set nb-retained-solutions="10"/>
-		<set use-spanning-tree-for-cost="false"/>
+		<set use-spanning-tree-for-cost="true"/>
 		<set use-random-init-solution="false"/>
+		<set use-closest-pickup-solution="true"/>
+		<set use-closest-pickup-solution-by-pickup="true"/>
 	</agent>
 
 </agents>

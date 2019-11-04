@@ -2,7 +2,6 @@ package centralized_rla;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class Utils {
     public static List<SolutionSpace> minimalElements(List<SolutionSpace> sols) {
