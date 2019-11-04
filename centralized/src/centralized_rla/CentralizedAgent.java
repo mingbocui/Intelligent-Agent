@@ -11,7 +11,6 @@ import logist.task.TaskSet;
 import logist.topology.Topology;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 import java.util.function.Predicate;
@@ -62,7 +61,9 @@ public class CentralizedAgent implements CentralizedBehavior {
             newSolutions.removeIf(Predicate.not(SolutionSpace::passesConstraints));
             System.out.println("\twe have " + newSolutions.size() + " new sols");
             
-            var newBest = newSolutions.stream().min(Comparator.comparingDouble(SolutionSpace::cost)).get();
+            var minSols = Utils.minimalElements(newSolutions);
+            System.out.println("\tfound " + minSols.size() + " new min solutions, will pick a random one");
+            var newBest = minSols.get(rnd.nextInt(minSols.size()));
             
             if (newBest.cost() < currentBest.cost()) {
                 currentBest = newBest;
