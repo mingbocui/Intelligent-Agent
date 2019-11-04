@@ -5,10 +5,7 @@ import logist.simulation.Vehicle;
 import logist.task.Task;
 import logist.task.TaskSet;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -66,7 +63,7 @@ public class SolutionSpace {
         return sol;
     }
     
-    public static SolutionSpace randomSolution(List<Vehicle> vehicles, TaskSet tasks, boolean useSpanningTreeForCost) {
+    public static SolutionSpace randomSolution(List<Vehicle> vehicles, TaskSet tasks, boolean useSpanningTreeForCost, Random rnd) {
         var sol = new SolutionSpace(vehicles, tasks, useSpanningTreeForCost);
         List<List<ActionTask>> as = new ArrayList<>();
         List<Integer> weightSoFar = new ArrayList<>();
@@ -75,7 +72,7 @@ public class SolutionSpace {
             weightSoFar.add(0);
         });
         List<Task> taskList = new ArrayList<>(tasks);
-        Collections.shuffle(taskList);
+        Collections.shuffle(taskList, rnd);
         
         int currVehicleId = 0;
         for (final Task t : taskList) {
@@ -97,12 +94,12 @@ public class SolutionSpace {
         return sol;
     }
     
-    public static SolutionSpace assignClosestTasksByPickup(List<Vehicle> vehicles, TaskSet tasks, boolean useSpanningTreeForCost) {
-        return assignClosestTasks(vehicles, tasks, useSpanningTreeForCost, false);
+    public static SolutionSpace assignClosestTasksByPickup(List<Vehicle> vehicles, TaskSet tasks, boolean useSpanningTreeForCost, Random rnd) {
+        return assignClosestTasks(vehicles, tasks, useSpanningTreeForCost, false, rnd);
     }
     
-    public static SolutionSpace assignClosestTasksByDelivery(List<Vehicle> vehicles, TaskSet tasks, boolean useSpanningTreeForCost) {
-        return assignClosestTasks(vehicles, tasks, useSpanningTreeForCost, false);
+    public static SolutionSpace assignClosestTasksByDelivery(List<Vehicle> vehicles, TaskSet tasks, boolean useSpanningTreeForCost, Random rnd) {
+        return assignClosestTasks(vehicles, tasks, useSpanningTreeForCost, false, rnd);
     }
     
     /**
@@ -113,7 +110,7 @@ public class SolutionSpace {
      * @param useSpanningTreeForCost
      * @return
      */
-    public static SolutionSpace assignClosestTasks(List<Vehicle> vehicles, TaskSet tasks, boolean useSpanningTreeForCost, boolean usePickUp) {
+    public static SolutionSpace assignClosestTasks(List<Vehicle> vehicles, TaskSet tasks, boolean useSpanningTreeForCost, boolean usePickUp, Random rnd) {
         var sol = new SolutionSpace(vehicles, tasks, useSpanningTreeForCost);
         List<List<ActionTask>> as = new ArrayList<>();
         List<Integer> weightSoFar = new ArrayList<>();
@@ -122,7 +119,7 @@ public class SolutionSpace {
             weightSoFar.add(0);
         });
         List<Task> taskList = new ArrayList<>(tasks);
-        Collections.shuffle(taskList);
+        Collections.shuffle(taskList, rnd);
         
         for (final Task t : taskList) {
             List<Integer> idxCitiesByDist;

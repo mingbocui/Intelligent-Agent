@@ -15,6 +15,10 @@ import java.util.stream.IntStream;
 class VehiclePlan {
     public Vehicle vehicle;
     public List<ActionTask> actionTasks;
+    private double spanTreeLength = -1;
+    private double _profit = -1;
+    private double _cost = -1;
+    private List<Task> _tasks = null;
     
     public VehiclePlan(Vehicle vehicle, List<ActionTask> actionTasks) {
         this.vehicle = vehicle;
@@ -22,14 +26,19 @@ class VehiclePlan {
     }
     
     public List<Task> getTasks() {
-        return actionTasks.stream().filter(ActionTask::isDelivery).map(ActionTask::getTask).collect(Collectors.toList());
+        if (this._tasks == null) {
+            this._tasks = actionTasks.stream().filter(ActionTask::isDelivery).map(ActionTask::getTask).collect(Collectors.toList());
+        }
+        
+        return this._tasks;
     }
     
     private boolean allPickUpsBeforeDeliveries() {
         for (int i = 0; i < actionTasks.size(); i++) {
             if (actionTasks.get(i).isDelivery()) {
-                final var at = actionTasks.get(i);
-                final int pickUpIdx = IntStream.range(0, i).filter(idx -> actionTasks.get(idx).isPickup() && actionTasks.get(idx).getTask().equals(at.getTask())).findFirst().orElse(i);
+                final var taskAtHand = actionTasks.get(i).getTask();
+                final int pickUpIdx = IntStream.range(0, i).filter(idx -> actionTasks.get(idx).isPickup()
+                        && actionTasks.get(idx).getTask().equals(taskAtHand)).findFirst().orElse(i);
                 
                 if (pickUpIdx >= i) {
                     return false;
@@ -63,7 +72,11 @@ class VehiclePlan {
     }
     
     public double cost() {
-        return getPlan().totalDistance() * vehicle.costPerKm();
+        if (this._cost == -1) {
+            this._cost = getPlan().totalDistance() * vehicle.costPerKm();
+        }
+        
+        return this._cost;
     }
     
     public double combinedCost() {
@@ -118,35 +131,41 @@ class VehiclePlan {
     }
     
     public double profit() {
-        return this.getTasks().stream().mapToDouble(t -> t.reward).sum() - this.cost();
+        if (this._profit == -1) {
+            this._profit = this.getTasks().stream().mapToDouble(t -> t.reward).sum() - this.cost();
+        }
+        return this._profit;
     }
     
     public double spanningTreeLength() {
-        // using kruskal
-        Set<Topology.City> citiesToVisit = new HashSet<>(Set.of(vehicle.homeCity()));
-        getTasks().forEach(t -> citiesToVisit.addAll(List.of(t.pickupCity, t.deliveryCity)));
-        
-        List<Edge> edges = new ArrayList<>();
-        for (final var cityA : citiesToVisit) {
-            for (final var cityB : citiesToVisit) {
-                if (cityA != cityB) {
-                    edges.add(new Edge(cityA, cityB));
+        if (this.spanTreeLength == -1) {
+            // using kruskal
+            Set<Topology.City> citiesToVisit = new HashSet<>(Set.of(vehicle.homeCity()));
+            getTasks().forEach(t -> citiesToVisit.addAll(List.of(t.pickupCity, t.deliveryCity)));
+            
+            List<Edge> edges = new ArrayList<>();
+            for (final var cityA : citiesToVisit) {
+                for (final var cityB : citiesToVisit) {
+                    if (cityA != cityB) {
+                        edges.add(new Edge(cityA, cityB));
+                    }
                 }
             }
-        }
-        
-        List<Edge> chosenEdges = new ArrayList<>();
-        for (final var edge : edges) {
-            Set<Topology.City> exploredCities = chosenEdges.stream().flatMap(t -> t.getCities().stream()).collect(Collectors.toSet());
             
-            if (exploredCities.containsAll(citiesToVisit)) break;
-            
-            if (!exploredCities.containsAll(edge.getCities())) {
-                chosenEdges.add(edge);
+            List<Edge> chosenEdges = new ArrayList<>();
+            for (final var edge : edges) {
+                Set<Topology.City> exploredCities = chosenEdges.stream().flatMap(t -> t.getCities().stream()).collect(Collectors.toSet());
+                
+                if (exploredCities.containsAll(citiesToVisit)) break;
+                
+                if (!exploredCities.containsAll(edge.getCities())) {
+                    chosenEdges.add(edge);
+                }
             }
+            
+            this.spanTreeLength = chosenEdges.stream().mapToDouble(Edge::getDist).sum();
         }
-        
-        return chosenEdges.stream().mapToDouble(Edge::getDist).sum();
+        return this.spanTreeLength;
     }
     
     private class Edge {
