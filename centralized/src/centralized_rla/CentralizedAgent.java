@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 public class CentralizedAgent implements CentralizedBehavior {
     private double randomSolutionSelection;
@@ -67,14 +68,16 @@ public class CentralizedAgent implements CentralizedBehavior {
         }
         
         List<SolutionSpace> candidateSolutions = new ArrayList<>(List.of(initSpace));
+        List<SolutionSpace> currentMinSolutions = new ArrayList<>();
         int nIterations = 0;
         
         SolutionSpace currentBest = new SolutionSpace(initSpace);
         
         while (true) {
             System.out.println(">>> in iteration " + nIterations);
-            List<SolutionSpace> newSolutions = new ArrayList<>(List.of(initSpace));
-            initSpace.changeVehicle().forEach(s -> newSolutions.addAll(s.permuteActions()));
+            List<SolutionSpace> newSolutions = initSpace.changeVehicle().parallelStream()
+                    .flatMap(s -> s.permuteActions().stream()).collect(Collectors.toList());
+            newSolutions.add(initSpace);
             
             newSolutions.removeIf(Predicate.not(SolutionSpace::passesConstraints));
             System.out.println("\twe have " + newSolutions.size() + " new sols");
@@ -121,7 +124,7 @@ public class CentralizedAgent implements CentralizedBehavior {
             // java... what is this shit? we need to do the copy otherwise the compiler complains
             SolutionSpace finalInitSpace = initSpace;
             if (candidateSolutions.size() >= this.nRetainedSolutions
-                    && !chooseRandom
+                    && !chooseRandom // done to prevent overwriting the selection above from being stuck
                     && candidateSolutions.stream().allMatch(s -> s.combinedCost() < finalInitSpace.combinedCost())) {
                 System.out.print("\t*** restarting search using old best solution, proposed sol has combinedCost of: " + finalInitSpace.combinedCost() + ", saved combinedCosts: ");
                 candidateSolutions.forEach(c -> System.out.print(c.combinedCost() + ", "));
