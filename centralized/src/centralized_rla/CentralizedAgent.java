@@ -38,14 +38,14 @@ public class CentralizedAgent implements CentralizedBehavior {
         this.timeoutPlan = ls.get(LogistSettings.TimeoutKey.PLAN);
         
         // As suggested from the slides, 0.3 to 0.5 would be a good choice for p.
-        this.randomSolutionSelection = agent.readProperty("random-solution-selection", Double.class, 0.30);
+        this.randomSolutionSelection = agent.readProperty("random-solution-selection", Double.class, 0.3);
         this.nRetainedSolutions = agent.readProperty("nb-retained-solutions", Integer.class, 10);
-        this.useSpanningTreeForCost = agent.readProperty("use-spanning-tree-for-cost", Boolean.class, true);
-        this.useRandomInitSolution = agent.readProperty("use-random-init-solution", Boolean.class, false);
-        this.useClosestPickUpSolution = agent.readProperty("use-closest-pickup-solution", Boolean.class, true);
+        this.useSpanningTreeForCost = agent.readProperty("use-spanning-tree-for-cost", Boolean.class, false);
+        this.useRandomInitSolution = agent.readProperty("use-random-init-solution", Boolean.class, true);
+        this.useClosestPickUpSolution = agent.readProperty("use-closest-pickup-solution", Boolean.class, false);
         this.useClosestPickUpSolutionByPickup = agent.readProperty("use-closest-pickup-solution-by-pickup", Boolean.class, true);
         this.nNewCachedSolutions = agent.readProperty("nb-new-cached-solutions", Integer.class, 10);
-        this.usedSeed = agent.readProperty("random-seed", Integer.class, 1337);
+        this.usedSeed = agent.readProperty("random-seed", Integer.class, 41121);
         this.rnd = new Random(this.usedSeed);
     }
     

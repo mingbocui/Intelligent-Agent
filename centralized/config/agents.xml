@@ -16,8 +16,8 @@
 		<set random-solution-selection="0.3"/>
 		<set nb-retained-solutions="10"/>
 		<set use-spanning-tree-for-cost="false"/>
-		<set use-random-init-solution="false"/>
-		<set use-closest-pickup-solution="true"/>
+		<set use-random-init-solution="true"/>
+		<set use-closest-pickup-solution="false"/>
 		<set use-closest-pickup-solution-by-pickup="true"/>
 		<set nb-new-cached-solutions="10"/>
 	</agent>

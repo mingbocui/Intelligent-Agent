@@ -18,3 +18,12 @@
     with some magic random seed I can't find again
 *** found solution after 532 iterations, combinedCost (cost): 18600.0 (18600.0), profit: 1785143.0
     using config: useClosestPickUpSolution: true, useRandomInitSolution: false, useSpanningTreeForCost: false, nRetainedSolutions: 10, randomSolutionSelection: 0.3, nCachedSolutions: 10, randomSeed: 41121
+*** found solution after 206 iterations, combinedCost (cost): 2.37554233E7 (25343.5), profit: 1778399.5
+    using config: useClosestPickUpSolution: true, useRandomInitSolution: false, useSpanningTreeForCost: true, nRetainedSolutions: 10, randomSolutionSelection: 0.3, nCachedSolutions: 10, randomSeed: 41121
+    id: 02
+*** found solution after 524 iterations, combinedCost (cost): 18600.0 (18600.0), profit: 1785143.0
+    using config: useClosestPickUpSolution: true, useRandomInitSolution: false, useSpanningTreeForCost: false, nRetainedSolutions: 10, randomSolutionSelection: 0.3, nCachedSolutions: 10, randomSeed: 41121
+    id: 03
+*** found solution after 671 iterations, combinedCost (cost): 16598.5 (16598.5), profit: 1787144.5
+    using config: useClosestPickUpSolution: false, useRandomInitSolution: true, useSpanningTreeForCost: false, nRetainedSolutions: 10, randomSolutionSelection: 0.3, nCachedSolutions: 10, randomSeed: 41121
+    id: 04
