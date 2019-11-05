@@ -1,0 +1,13 @@
+*** found solution after 400 iterations, combinedCost (cost): 20333.0 (20333.0), profit: 1783410.0
+    using config: useClosestPickUpSolution: true, useRandomInitSolution: false, useSpanningTreeForCost: false, nRetainedSolutions: 8, randomSolutionSelection: 0.25
+*** found solution after 408 iterations, combinedCost (cost): 23750.5 (23750.5), profit: 1779992.5
+    using config: useClosestPickUpSolution: true, useRandomInitSolution: false, useSpanningTreeForCost: false, nRetainedSolutions: 8, randomSolutionSelection: 0.3
+*** found solution after 428 iterations, combinedCost (cost): 21865.0 (21865.0), profit: 1781878.0
+    using config: useClosestPickUpSolution: true, useRandomInitSolution: false, useSpanningTreeForCost: false, nRetainedSolutions: 6, randomSolutionSelection: 0.3
+*** found solution after 467 iterations, combinedCost (cost): 24952.0 (24952.0), profit: 1778791.0
+    using config: useClosestPickUpSolution: true, useRandomInitSolution: false, useSpanningTreeForCost: false, nRetainedSolutions: 4, randomSolutionSelection: 0.3
+*** found solution after 451 iterations, combinedCost (cost): 23225.5 (23225.5), profit: 1780517.5
+    using config: useClosestPickUpSolution: true, useRandomInitSolution: false, useSpanningTreeForCost: false, nRetainedSolutions: 4, randomSolutionSelection: 0.35
+*** found solution after 467 iterations, combinedCost (cost): 23904.5 (23904.5), profit: 1779838.5
+    using config: useClosestPickUpSolution: true, useRandomInitSolution: false, useSpanningTreeForCost: false, nRetainedSolutions: 8, randomSolutionSelection: 0.25
+    with new partial new selection of random sol

@@ -10,9 +10,7 @@ import logist.task.TaskDistribution;
 import logist.task.TaskSet;
 import logist.topology.Topology;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -92,12 +90,20 @@ public class CentralizedAgent implements CentralizedBehavior {
             //      cost 19618
             //  *** found sol after 197 iters, cost 21760.0 profit: 1781983.0
             //  *** found sol after 183 iters, cost 19111.0 profit: 1784632.0
+            //
+            //  *** found solution after 90 iterations, combinedCost (cost): 1.81207077E7 (18732.5), lowest so far: 1785010.5
             boolean stuck = candidateSolutions.size() >= this.nRetainedSolutions
                     && candidateSolutions.stream().mapToDouble(SolutionSpace::combinedCost).distinct().limit(2).count() <= 1;
             boolean chooseRandom = false;
-            if (stuck && rnd.nextDouble() < this.randomSolutionSelection) {
-                System.out.println("\tselecting random sol");
-                initSpace = newSolutions.get(rnd.nextInt(newSolutions.size()));
+            if (stuck || rnd.nextDouble() < this.randomSolutionSelection) {
+                if (!currentMinSolutions.isEmpty()) {
+                    System.out.println("\tselecting sol from queue, " + (currentMinSolutions.size() - 1) + " left to explore");
+                    currentMinSolutions.sort(Comparator.comparingDouble(SolutionSpace::combinedCost));
+                    initSpace = currentMinSolutions.remove(0);
+                } else {
+                    System.out.println("\tselecting random sol");
+                    initSpace = newSolutions.get(rnd.nextInt(newSolutions.size()));
+                }
                 chooseRandom = true;
             } else {
                 var minSols = Utils.minimalElements(newSolutions);
@@ -105,6 +111,12 @@ public class CentralizedAgent implements CentralizedBehavior {
                 var newBest = minSols.get(rnd.nextInt(minSols.size()));
                 System.out.println("\tselecting best sol");
                 initSpace = newBest;
+                
+                if (minSols.get(0).combinedCost() < currentBest.combinedCost()) {
+                    for (int i = 0; i < Math.min(10, minSols.size()); i++) {
+                        currentMinSolutions.add(minSols.get(rnd.nextInt(minSols.size())));
+                    }
+                }
             }
             
             if (initSpace.combinedCost() < currentBest.combinedCost()) {
@@ -138,8 +150,14 @@ public class CentralizedAgent implements CentralizedBehavior {
         
         System.out.println(String.format("*** found solution after %d iterations, combinedCost (cost): %s (%s), profit: %s",
                 nIterations, currentBest.combinedCost(), currentBest.cost(), currentBest.profit()));
+        System.out.println("\tusing config: " + config());
         
         return currentBest.getPlans();
+    }
+    
+    private String config() {
+        return String.format("useClosestPickUpSolution: %s, useRandomInitSolution: %s, useSpanningTreeForCost: %s, nRetainedSolutions: %s, randomSolutionSelection: %s",
+        this.useClosestPickUpSolution, this.useRandomInitSolution, this.useSpanningTreeForCost, this.nRetainedSolutions, this.randomSolutionSelection);
     }
     
     private boolean outOfTime(long startTime, int nIterations) {
