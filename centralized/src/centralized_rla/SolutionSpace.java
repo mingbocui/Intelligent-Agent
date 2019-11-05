@@ -199,9 +199,12 @@ public class SolutionSpace {
             for (int pos = 0; pos < vehiclePlan.actionTasks.size(); pos++) {
                 // Generation of new solutions
                 for (int j = 0; j < vehiclePlan.actionTasks.size(); j++) {
-                    SolutionSpace sol = new SolutionSpace(this);
-                    Collections.swap(sol.vehiclePlans.get(i).actionTasks, pos, j);
-                    newSolutions.add(sol);
+                    if (pos != j) {
+                        int j_after_removal = pos < j ? j - 1 : j;
+                        SolutionSpace sol = new SolutionSpace(this);
+                        sol.vehiclePlans.get(i).actionTasks.set(j_after_removal, sol.vehiclePlans.get(i).actionTasks.remove(pos));
+                        newSolutions.add(sol);
+                    }
                 }
             }
         }
