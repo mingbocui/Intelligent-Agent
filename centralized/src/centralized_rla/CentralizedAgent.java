@@ -79,17 +79,15 @@ public class CentralizedAgent implements CentralizedBehavior {
             System.out.println(">>> in iteration " + nIterations);
             List<SolutionSpace> newSolutions = initSpace.changeVehicle().parallelStream()
                     .flatMap(s -> s.permuteActions().stream()).collect(Collectors.toList());
-            //newSolutions.add(initSpace);
+            newSolutions.add(initSpace);
             
-            // done in permuteActions
-            //newSolutions.removeIf(Predicate.not(SolutionSpace::passesConstraints));
             System.out.println("\twe have " + newSolutions.size() + " new sols");
             
             boolean stuck = candidateSolutions.size() >= this.nRetainedSolutions
                     && candidateSolutions.stream().mapToDouble(SolutionSpace::combinedCost).distinct().limit(2).count() <= 1;
             boolean chooseRandom = false;
             if (stuck || rnd.nextDouble() < this.randomSolutionSelection) {
-                if (!currentMinSolutions.isEmpty()) {
+                if (!currentMinSolutions.isEmpty() && rnd.nextDouble() < 0.5) {
                     System.out.println("\tselecting sol from queue, " + (currentMinSolutions.size() - 1) + " left to explore");
                     currentMinSolutions.sort(Comparator.comparingDouble(SolutionSpace::combinedCost));
                     initSpace = currentMinSolutions.remove(0);
