@@ -15,6 +15,7 @@ public class SolutionSpace {
     private List<Vehicle> vehicles;
     private TaskSet tasks;
     private boolean useSpanningTreeForCost;
+    private double _cost = -1;
     
     public SolutionSpace(List<Vehicle> vehicles, TaskSet tasks, boolean useSpanningTreeForCost) {
         this.vehicles = vehicles;
@@ -166,7 +167,10 @@ public class SolutionSpace {
     }
     
     public double cost() {
-        return vehiclePlans.stream().mapToDouble(VehiclePlan::cost).sum();
+        if (_cost == -1) {
+            this._cost = vehiclePlans.stream().mapToDouble(VehiclePlan::cost).sum();
+        }
+        return this._cost;
     }
     
     public double profit() {

@@ -1,0 +1,2 @@
+*** found solution after 400 iterations, combinedCost (cost): 20333.0 (20333.0), profit: 1783410.0
+	using config: useClosestPickUpSolution: true, useRandomInitSolution: false, useSpanningTreeForCost: false, nRetainedSolutions: 8, randomSolutionSelection: 0.25

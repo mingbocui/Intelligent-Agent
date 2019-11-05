@@ -10,10 +10,7 @@ import logist.task.TaskDistribution;
 import logist.task.TaskSet;
 import logist.topology.Topology;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -101,8 +98,8 @@ public class CentralizedAgent implements CentralizedBehavior {
             if (stuck || rnd.nextDouble() < this.randomSolutionSelection) {
                 if (!currentMinSolutions.isEmpty()) {
                     System.out.println("\tselecting sol from queue, " + currentMinSolutions.size() + " left to explore");
-                    initSpace = currentMinSolutions.get(rnd.nextInt(currentMinSolutions.size()));
-                    currentMinSolutions.remove(initSpace);
+                    currentMinSolutions.sort(Comparator.comparingDouble(SolutionSpace::combinedCost));
+                    initSpace = currentMinSolutions.remove(0);
                 } else {
                     System.out.println("\tselecting random sol");
                     initSpace = newSolutions.get(rnd.nextInt(newSolutions.size()));
@@ -153,8 +150,14 @@ public class CentralizedAgent implements CentralizedBehavior {
         
         System.out.println(String.format("*** found solution after %d iterations, combinedCost (cost): %s (%s), profit: %s",
                 nIterations, currentBest.combinedCost(), currentBest.cost(), currentBest.profit()));
+        System.out.println("\tusing config: " + config());
         
         return currentBest.getPlans();
+    }
+    
+    private String config() {
+        return String.format("useClosestPickUpSolution: %s, useRandomInitSolution: %s, useSpanningTreeForCost: %s, nRetainedSolutions: %s, randomSolutionSelection: %s",
+        this.useClosestPickUpSolution, this.useRandomInitSolution, this.useSpanningTreeForCost, this.nRetainedSolutions, this.randomSolutionSelection);
     }
     
     private boolean outOfTime(long startTime, int nIterations) {
