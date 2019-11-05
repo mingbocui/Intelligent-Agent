@@ -97,7 +97,7 @@ public class CentralizedAgent implements CentralizedBehavior {
             boolean chooseRandom = false;
             if (stuck || rnd.nextDouble() < this.randomSolutionSelection) {
                 if (!currentMinSolutions.isEmpty()) {
-                    System.out.println("\tselecting sol from queue, " + currentMinSolutions.size() + " left to explore");
+                    System.out.println("\tselecting sol from queue, " + (currentMinSolutions.size() - 1) + " left to explore");
                     currentMinSolutions.sort(Comparator.comparingDouble(SolutionSpace::combinedCost));
                     initSpace = currentMinSolutions.remove(0);
                 } else {
