@@ -22,6 +22,8 @@ public class CentralizedAgent implements CentralizedBehavior {
     private boolean useRandomInitSolution;
     private boolean useClosestPickUpSolution;
     private boolean useClosestPickUpSolutionByPickup;
+    private int nNewCachedSolutions;
+    private long usedSeed;
     private Random rnd;
     
     @Override
@@ -36,13 +38,15 @@ public class CentralizedAgent implements CentralizedBehavior {
         this.timeoutPlan = ls.get(LogistSettings.TimeoutKey.PLAN);
         
         // As suggested from the slides, 0.3 to 0.5 would be a good choice for p.
-        this.randomSolutionSelection = agent.readProperty("random-solution-selection", Double.class, 0.35);
+        this.randomSolutionSelection = agent.readProperty("random-solution-selection", Double.class, 0.30);
         this.nRetainedSolutions = agent.readProperty("nb-retained-solutions", Integer.class, 10);
         this.useSpanningTreeForCost = agent.readProperty("use-spanning-tree-for-cost", Boolean.class, true);
         this.useRandomInitSolution = agent.readProperty("use-random-init-solution", Boolean.class, false);
         this.useClosestPickUpSolution = agent.readProperty("use-closest-pickup-solution", Boolean.class, true);
         this.useClosestPickUpSolutionByPickup = agent.readProperty("use-closest-pickup-solution-by-pickup", Boolean.class, true);
-        this.rnd = new Random(agent.readProperty("random-seed", Integer.class, 1337));
+        this.nNewCachedSolutions = agent.readProperty("nb-new-cached-solutions", Integer.class, 10);
+        this.usedSeed = agent.readProperty("random-seed", Integer.class, 1337);
+        this.rnd = new Random(this.usedSeed);
     }
     
     @Override
@@ -75,9 +79,10 @@ public class CentralizedAgent implements CentralizedBehavior {
             System.out.println(">>> in iteration " + nIterations);
             List<SolutionSpace> newSolutions = initSpace.changeVehicle().parallelStream()
                     .flatMap(s -> s.permuteActions().stream()).collect(Collectors.toList());
-            newSolutions.add(initSpace);
+            //newSolutions.add(initSpace);
             
-            newSolutions.removeIf(Predicate.not(SolutionSpace::passesConstraints));
+            // done in permuteActions
+            //newSolutions.removeIf(Predicate.not(SolutionSpace::passesConstraints));
             System.out.println("\twe have " + newSolutions.size() + " new sols");
             
             boolean stuck = candidateSolutions.size() >= this.nRetainedSolutions
@@ -101,7 +106,7 @@ public class CentralizedAgent implements CentralizedBehavior {
                 initSpace = newBest;
                 
                 if (minSols.get(0).combinedCost() < currentBest.combinedCost()) {
-                    for (int i = 0; i < Math.min(10, minSols.size()); i++) {
+                    for (int i = 0; i < Math.min(this.nNewCachedSolutions, minSols.size()); i++) {
                         currentMinSolutions.add(minSols.get(rnd.nextInt(minSols.size())));
                     }
                 }
@@ -144,8 +149,8 @@ public class CentralizedAgent implements CentralizedBehavior {
     }
     
     private String config() {
-        return String.format("useClosestPickUpSolution: %s, useRandomInitSolution: %s, useSpanningTreeForCost: %s, nRetainedSolutions: %s, randomSolutionSelection: %s",
-        this.useClosestPickUpSolution, this.useRandomInitSolution, this.useSpanningTreeForCost, this.nRetainedSolutions, this.randomSolutionSelection);
+        return String.format("useClosestPickUpSolution: %s, useRandomInitSolution: %s, useSpanningTreeForCost: %s, nRetainedSolutions: %s, randomSolutionSelection: %s, nCachedSolutions: %s, randomSeed: %s",
+        this.useClosestPickUpSolution, this.useRandomInitSolution, this.useSpanningTreeForCost, this.nRetainedSolutions, this.randomSolutionSelection, this.nNewCachedSolutions, this.usedSeed);
     }
     
     private boolean outOfTime(long startTime, int nIterations) {

@@ -197,13 +197,15 @@ public class SolutionSpace {
             if (vehiclePlan.getTasks().size() < 2) continue;
             
             for (int pos = 0; pos < vehiclePlan.actionTasks.size(); pos++) {
-                // Generation of new solutions
                 for (int j = 0; j < vehiclePlan.actionTasks.size(); j++) {
                     if (pos != j) {
                         int j_after_removal = pos < j ? j - 1 : j;
                         SolutionSpace sol = new SolutionSpace(this);
-                        sol.vehiclePlans.get(i).actionTasks.set(j_after_removal, sol.vehiclePlans.get(i).actionTasks.remove(pos));
-                        newSolutions.add(sol);
+                        final var el = sol.vehiclePlans.get(i).actionTasks.remove(pos);
+                        sol.vehiclePlans.get(i).actionTasks.add(j_after_removal, el);
+                        if (sol.passesConstraints()) {
+                            newSolutions.add(sol);
+                        }
                     }
                 }
             }
