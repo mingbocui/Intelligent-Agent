@@ -80,18 +80,6 @@ public class CentralizedAgent implements CentralizedBehavior {
             newSolutions.removeIf(Predicate.not(SolutionSpace::passesConstraints));
             System.out.println("\twe have " + newSolutions.size() + " new sols");
             
-            // TODO not sure if we should activate this, if I set it to false it sometimes get's as low as 21386.0
-            // we select the randomly best value above... but our approach could be too greedily ...
-            // this returns a combinedCost of 21334 and a profit of 1782509
-            // with this off it finds this:
-            //  *** found sol after 180 iters, cost 21386.0 profit: 1782357.0
-            //  *** found sol after 202 iters, cost 21794.0 profit: 1781949.0
-            // with this on:
-            //      cost 19618
-            //  *** found sol after 197 iters, cost 21760.0 profit: 1781983.0
-            //  *** found sol after 183 iters, cost 19111.0 profit: 1784632.0
-            //
-            //  *** found solution after 90 iterations, combinedCost (cost): 1.81207077E7 (18732.5), lowest so far: 1785010.5
             boolean stuck = candidateSolutions.size() >= this.nRetainedSolutions
                     && candidateSolutions.stream().mapToDouble(SolutionSpace::combinedCost).distinct().limit(2).count() <= 1;
             boolean chooseRandom = false;

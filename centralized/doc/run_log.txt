@@ -11,3 +11,8 @@
 *** found solution after 467 iterations, combinedCost (cost): 23904.5 (23904.5), profit: 1779838.5
     using config: useClosestPickUpSolution: true, useRandomInitSolution: false, useSpanningTreeForCost: false, nRetainedSolutions: 8, randomSolutionSelection: 0.25
     with new partial new selection of random sol
+*** found solution after 234 iterations, combinedCost (cost): 2.88893027E7 (32370.5), profit: 1771372.5
+    using config: useClosestPickUpSolution: true, useRandomInitSolution: false, useSpanningTreeForCost: true, nRetainedSolutions: 8, randomSolutionSelection: 0.3
+*** found solution after 90 iterations, combinedCost (cost): 1.81207077E7 (18732.5), lowest so far: 1785010.5
+    using config: useClosestPickUpSolution: true, useRandomInitSolution: false, useSpanningTreeForCost: true, nRetainedSolutions: 10, randomSolutionSelection: 0.3
+    with some magic random seed I can't find again

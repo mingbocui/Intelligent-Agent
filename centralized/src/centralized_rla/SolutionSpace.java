@@ -189,7 +189,7 @@ public class SolutionSpace {
     }
     
     public List<SolutionSpace> permuteActions() {
-        List<SolutionSpace> newSolutions = new ArrayList<>();
+        List<SolutionSpace> newSolutions = new ArrayList<>(List.of(new SolutionSpace(this)));
         
         // sadly we need the indexes
         for (int i = 0; i < vehiclePlans.size(); i++) {
