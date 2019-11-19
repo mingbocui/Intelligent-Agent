@@ -1,8 +1,10 @@
 package auction;
 
+import logist.LogistSettings;
 import logist.Measures;
 import logist.agent.Agent;
 import logist.behavior.AuctionBehavior;
+import logist.config.Parsers;
 import logist.plan.Plan;
 import logist.simulation.Vehicle;
 import logist.task.Task;
@@ -16,7 +18,10 @@ import java.util.List;
 import java.util.Random;
 
 public class AuctionAgent implements AuctionBehavior {
-    
+
+    private long timeoutSetup;
+    private long timeoutPlan;
+    private long timeoutBid;
     private Topology topology;
     private TaskDistribution distribution;
     private Agent agent;
@@ -27,6 +32,17 @@ public class AuctionAgent implements AuctionBehavior {
     @Override
     public void setup(Topology topology, TaskDistribution distribution,
                       Agent agent) {
+
+        LogistSettings ls = null;
+        try {
+            ls = Parsers.parseSettings("config/settings_auction.xml");
+        } catch (Exception exc) {
+            System.out.println("There was a problem loading the configuration file.");
+        }
+
+        this.timeoutSetup = ls.get(LogistSettings.TimeoutKey.SETUP);
+        this.timeoutPlan = ls.get(LogistSettings.TimeoutKey.PLAN);
+        this.timeoutBid = ls.get(LogistSettings.TimeoutKey.BID);
         
         this.topology = topology;
         this.distribution = distribution;
