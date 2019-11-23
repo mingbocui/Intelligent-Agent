@@ -33,6 +33,8 @@ public class AuctionAgent implements AuctionBehavior {
     private double bidScale;
     private double randomFactor;
     private long moneyCollected;
+    private long nextOpponentBid;
+    private long ourBid;
     
     @Override
     public void setup(Topology topology, TaskDistribution distribution,
@@ -81,8 +83,8 @@ public class AuctionAgent implements AuctionBehavior {
         // TODO get lowest bid -> adapt
         System.out.println(String.format("auction result, viewing from agent %d  n round %d, we won %d", + agent.id(), nAuctionRounds, this.wonTasks.size()));
     
-        long ourBid = bids[agent.id()];
-        long nextOpponentBid = Long.MAX_VALUE;
+        this.nextOpponentBid = Long.MAX_VALUE;
+        this.ourBid = bids[agent.id()];
         for (int i = 0; i < bids.length; i++) {
             var s = String.format(">>> agent: %d bids: %d", i, bids[i]);
             if (i == winner) {
@@ -92,21 +94,20 @@ public class AuctionAgent implements AuctionBehavior {
                 s += " (me)";
             }
             
-            if (bids[i] < nextOpponentBid && i != agent.id()) {
-               nextOpponentBid = bids[i] ;
+            if (bids[i] < this.nextOpponentBid && i != agent.id()) {
+               this.nextOpponentBid = bids[i] ;
             }
             System.out.println(s);
         }
         
-        System.out.print(String.format("our bid: %d, next Opponent: %d, adjusting bidScale from %4.4f to: ", ourBid, nextOpponentBid, this.bidScale));
+        System.out.print(String.format("our bid: %d, next Opponent: %d, adjusting bidScale from %4.4f to: ", ourBid, this.nextOpponentBid, this.bidScale));
         if (winner == agent.id()) {
             this.moneyCollected += ourBid;
             this.wonTasks.add(previous);
             this.currentSolution = this.solutionIfAuctionWon;
-            this.bidScale = (double)(nextOpponentBid - ourBid) / (nextOpponentBid + ourBid);
-        } else {
-            this.bidScale = (double)(nextOpponentBid - ourBid) / (nextOpponentBid + ourBid);
         }
+        
+        this.bidScale = (double)(nextOpponentBid - ourBid) / (nextOpponentBid + ourBid);
         System.out.println(this.bidScale);
         this.nAuctionRounds++;
     }
@@ -150,20 +151,21 @@ public class AuctionAgent implements AuctionBehavior {
         // aggressive underbidding at the start
         if (nAuctionRounds <= 2) {
             price *= 1 - (2 - nAuctionRounds) * 0.2;
-        }
-    
-        // we need to run even at least
-        if (this.moneyCollected != 0 && (this.moneyCollected + price) < this.solutionIfAuctionWon.cost()) {
-            price = Math.max((this.solutionIfAuctionWon.cost() - this.moneyCollected) * 0.50, 2000) * (1 + this.bidScale);
-            System.out.print(" adjusting price to get our money back, we need " + (this.solutionIfAuctionWon.cost() - this.moneyCollected) + " to break even");
-        }
-        
-        if (nAuctionRounds >= 4) {
-            price = Math.max(this.solutionIfAuctionWon.cost() - this.moneyCollected, price);
+        } else {
+            final var deficit = this.solutionIfAuctionWon.cost() - this.moneyCollected;
+            System.out.print(" adjusting price to get our money back, we need " + deficit + " to break even");
+            
+            if (price < deficit) {
+                price = deficit;
+            }
+            
+            if (price <= 0.0) {
+                price = this.nextOpponentBid - this.ourBid / 2.0;
+            }
         }
         
         System.out.println(" after adjusting we ask for " + price);
-        return (long)Math.ceil(price);
+        return (long)Math.ceil(price + 1);
     }
     
     @Override
@@ -172,13 +174,9 @@ public class AuctionAgent implements AuctionBehavior {
             return SolutionSpace.emptyPlan(this.agent.vehicles());
         }
         
-        // TODO mingbao can you use the already computed plan, but replace the old tasks with the new ones?
-        // you'll probably need to use `Action.toString()` and then extract some shit in order to find compare the tasks
-        // then just do `newPlan.appendPickup(task)`
-        // the reason is that we don't need to recompute the old solution, and we don't want to.
-    
-        System.out.println(String.format("we got %d, cost: %f, profit: %f", this.moneyCollected, this.currentSolution.cost(), this.moneyCollected - this.currentSolution.cost()));
-        
-        return centralizedPlanner.solution(vehicles, tasks.stream().collect(Collectors.toList()), this.timeoutPlan).getPlans();
+        System.out.print(String.format("we got %d, cost: %f, profit: %f", this.moneyCollected, this.currentSolution.cost(), this.moneyCollected - this.currentSolution.cost()));
+        var ret = centralizedPlanner.solution(vehicles, new ArrayList<>(tasks), this.timeoutPlan);
+        System.out.println(" current sol is found with cost of " + ret.cost());
+        return ret.getPlans();
     }
 }
