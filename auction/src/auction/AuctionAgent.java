@@ -1,5 +1,6 @@
 package auction;
 
+import auction.centralized_rla.CentralizedAgent;
 import logist.LogistSettings;
 import logist.Measures;
 import logist.agent.Agent;
@@ -116,14 +117,20 @@ public class AuctionAgent implements AuctionBehavior {
     @Override
     public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
 
+
+
 //		System.out.println("Agent " + agent.id() + " has tasks " + tasks);
         
-        Plan planVehicle1 = Utils.naivePlan(vehicle, tasks);
-        
-        List<Plan> plans = new ArrayList<Plan>();
-        plans.add(planVehicle1);
-        while (plans.size() < vehicles.size())
-            plans.add(Plan.EMPTY);
+//        Plan planVehicle1 = Utils.naivePlan(vehicle, tasks);
+//
+//        List<Plan> plans = new ArrayList<Plan>();
+//        plans.add(planVehicle1);
+//        while (plans.size() < vehicles.size())
+//            plans.add(Plan.EMPTY);
+
+        CentralizedAgent planner = new CentralizedAgent();
+
+        List<Plan> plans = planner.plan(vehicles, tasks);
         
         return plans;
     }
