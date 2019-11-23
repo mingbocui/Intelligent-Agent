@@ -14,9 +14,7 @@ import logist.task.TaskSet;
 import logist.topology.Topology;
 import logist.topology.Topology.City;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 public class AuctionAgent implements AuctionBehavior {
 
@@ -29,6 +27,11 @@ public class AuctionAgent implements AuctionBehavior {
     private Random random;
     private Vehicle vehicle;
     private City currentCity;
+    private TaskSet previousTasks;
+    private TaskSet currentTasks;
+    private CentralizedAgent centralizedPlanner;
+    private List<Plan> solutionWithoutBid;
+    private List<Plan> solutionWithBid;
     
     @Override
     public void setup(Topology topology, TaskDistribution distribution,
@@ -53,6 +56,9 @@ public class AuctionAgent implements AuctionBehavior {
         
         long seed = -9019554669489983951L * currentCity.hashCode() * agent.id();
         this.random = new Random(seed);
+
+        this.centralizedPlanner = new CentralizedAgent(timeoutPlan);
+        this.previousTasks = TaskSet.create(new Task[0]);
     }
     
     /**
@@ -99,19 +105,34 @@ public class AuctionAgent implements AuctionBehavior {
      */
     @Override
     public Long askPrice(Task task) {
-        if (vehicle.capacity() < task.weight)
-            return null;
-        
-        long distanceTask = task.pickupCity.distanceUnitsTo(task.deliveryCity);
-        long distanceSum = distanceTask
-                + currentCity.distanceUnitsTo(task.pickupCity);
-        double marginalCost = Measures.unitsToKM(distanceSum
-                * vehicle.costPerKm());
-        
-        double ratio = 1.0 + (random.nextDouble() * 0.05 * task.id);
-        double bid = ratio * marginalCost;
-        
-        return Math.round(bid);
+//        if (vehicle.capacity() < task.weight)
+//            return null;
+//
+//        long distanceTask = task.pickupCity.distanceUnitsTo(task.deliveryCity);
+//        long distanceSum = distanceTask
+//                + currentCity.distanceUnitsTo(task.pickupCity);
+//        double marginalCost = Measures.unitsToKM(distanceSum
+//                * vehicle.costPerKm());
+//
+//        double ratio = 1.0 + (random.nextDouble() * 0.05 * task.id);
+//        double bid = ratio * marginalCost;
+//
+//        return Math.round(bid);
+//        previousTasks.a
+//        CentralizedAgent planner = new CentralizedAgent(timeoutPlan);
+//        currentTasks = previousTasks.add(task);
+//        currentTasks = previousTasks.add(previousTasks.size(), task);
+//        TaskSet a;
+//        a.add
+//        previousTasks.stream().
+//        TaskSet tempSet = TaskSet.create(task);
+//        currentTasks = TaskSet.intersect(previousTasks, task);
+//        currentTasks = previousTasks.addAll(task);
+        Double marginalCost_double = this.centralizedPlanner.solutionSpace(agent.vehicles(), currentTasks).combinedCost() - this.centralizedPlanner.solutionSpace(agent.vehicles(), previousTasks).combinedCost();
+
+        long marginalCost = marginalCost_double.longValue();
+
+        return marginalCost;
     }
     
     @Override
@@ -128,9 +149,9 @@ public class AuctionAgent implements AuctionBehavior {
 //        while (plans.size() < vehicles.size())
 //            plans.add(Plan.EMPTY);
 
-        CentralizedAgent planner = new CentralizedAgent();
+//        CentralizedAgent planner = new CentralizedAgent(timeoutPlan);
 
-        List<Plan> plans = planner.plan(vehicles, tasks);
+        List<Plan> plans = this.centralizedPlanner.plan(vehicles, tasks);
         
         return plans;
     }

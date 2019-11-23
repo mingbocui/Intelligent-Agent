@@ -24,17 +24,24 @@ public class CentralizedAgent implements CentralizedBehavior {
     private int nNewCachedSolutions;
     private long usedSeed;
     private Random rnd;
+//    private List<Vehicle> vehicles;
+
+
+    public CentralizedAgent(long timeoutPlan){
+        this.timeoutPlan = timeoutPlan;
+//        this.vehicles = vehicles;
+    }
     
     @Override
     public void setup(Topology topology, TaskDistribution distribution, Agent agent) {
-        LogistSettings ls = null;
-        try {
-            ls = Parsers.parseSettings("config/settings_auction.xml");
-        } catch (Exception exc) {
-            System.out.println("There was a problem loading the configuration file.");
-        }
-        
-        this.timeoutPlan = ls.get(LogistSettings.TimeoutKey.PLAN);
+//        LogistSettings ls = null;
+//        try {
+//            ls = Parsers.parseSettings("config/settings_auction.xml");
+//        } catch (Exception exc) {
+//            System.out.println("There was a problem loading the configuration file.");
+//        }
+//
+//        this.timeoutPlan = ls.get(LogistSettings.TimeoutKey.PLAN);
         
         // As suggested from the slides, 0.3 to 0.5 would be a good choice for p.
         this.randomSolutionSelection = agent.readProperty("random-solution-selection", Double.class, 0.3);
@@ -50,6 +57,10 @@ public class CentralizedAgent implements CentralizedBehavior {
     
     @Override
     public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
+        return solutionSpace(vehicles, tasks).getPlans();
+    }
+
+    public SolutionSpace solutionSpace(List<Vehicle> vehicles, TaskSet tasks) {
         long startTime = System.currentTimeMillis();
         SolutionSpace initSpace;
         if (this.useRandomInitSolution) {
@@ -67,21 +78,21 @@ public class CentralizedAgent implements CentralizedBehavior {
             System.out.println("Using largest vehicle init solution");
             initSpace = SolutionSpace.largestVehicleSolution(vehicles, tasks, this.useSpanningTreeForCost);
         }
-        
+
         List<SolutionSpace> candidateSolutions = new ArrayList<>(List.of(initSpace));
         List<SolutionSpace> currentMinSolutions = new ArrayList<>();
         int nIterations = 0;
-        
+
         SolutionSpace currentBest = new SolutionSpace(initSpace);
-        
+
         while (true) {
             System.out.println(">>> in iteration " + nIterations);
             List<SolutionSpace> newSolutions = initSpace.changeVehicle().parallelStream()
                     .flatMap(s -> s.permuteActions().stream()).collect(Collectors.toList());
             newSolutions.add(initSpace);
-            
+
             System.out.println("\twe have " + newSolutions.size() + " new sols");
-            
+
             boolean stuck = candidateSolutions.size() >= this.nRetainedSolutions
                     && candidateSolutions.stream().mapToDouble(SolutionSpace::combinedCost).distinct().limit(2).count() <= 1;
             boolean chooseRandom = false;
@@ -101,23 +112,23 @@ public class CentralizedAgent implements CentralizedBehavior {
                 var newBest = minSols.get(rnd.nextInt(minSols.size()));
                 System.out.println("\tselecting best sol");
                 initSpace = newBest;
-                
+
                 if (minSols.get(0).combinedCost() < currentBest.combinedCost()) {
                     for (int i = 0; i < Math.min(this.nNewCachedSolutions, minSols.size()); i++) {
                         currentMinSolutions.add(minSols.get(rnd.nextInt(minSols.size())));
                     }
                 }
             }
-            
+
             if (initSpace.combinedCost() < currentBest.combinedCost()) {
                 currentBest = initSpace;
             }
-            
+
             System.out.println(String.format("\tcurrent combinedCost (cost): %s (%s), lowest so far: %s",
                     initSpace.combinedCost(), initSpace.cost(), currentBest.combinedCost()));
-            
+
             nIterations += 1;
-            
+
             if (outOfTime(startTime, nIterations)) {
                 System.out.println("\tout of time!");
                 break;
@@ -134,17 +145,17 @@ public class CentralizedAgent implements CentralizedBehavior {
                 initSpace = currentBest;
                 candidateSolutions.clear();
             }
-            
+
             candidateSolutions.add(initSpace);
         }
-        
+
         System.out.println(String.format("*** found solution after %d iterations, combinedCost (cost): %s (%s), profit: %s",
                 nIterations, currentBest.combinedCost(), currentBest.cost(), currentBest.profit()));
         System.out.println("\tusing config: " + config());
-        
-        return currentBest.getPlans();
+
+        return currentBest;
     }
-    
+
     private String config() {
         return String.format("useClosestPickUpSolution: %s, useRandomInitSolution: %s, useSpanningTreeForCost: %s, nRetainedSolutions: %s, randomSolutionSelection: %s, nCachedSolutions: %s, randomSeed: %s",
         this.useClosestPickUpSolution, this.useRandomInitSolution, this.useSpanningTreeForCost, this.nRetainedSolutions, this.randomSolutionSelection, this.nNewCachedSolutions, this.usedSeed);
