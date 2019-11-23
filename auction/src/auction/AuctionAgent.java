@@ -6,14 +6,12 @@ import logist.LogistSettings;
 import logist.agent.Agent;
 import logist.behavior.AuctionBehavior;
 import logist.config.Parsers;
-import logist.plan.Action;
 import logist.plan.Plan;
 import logist.simulation.Vehicle;
 import logist.task.Task;
 import logist.task.TaskDistribution;
 import logist.task.TaskSet;
 import logist.topology.Topology;
-import logist.topology.Topology.City;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -27,11 +25,20 @@ public class AuctionAgent implements AuctionBehavior {
     private TaskDistribution distribution;
     private Agent agent;
     private Random random;
-    private List<Task> wonTasks;
+    private List<Task> myWonTasks;
+    private List<Task> oppWonTasks; // opponennt won tasks
+
     private CentralizedAgent centralizedPlanner;
     private int nAuctionRounds;
-    private SolutionSpace currentSolution;
-    private SolutionSpace solutionIfAuctionWon;
+    private SolutionSpace myCurrentSolution;
+    private SolutionSpace mySolutionIfAuctionWon;
+    private SolutionSpace oppCurrentSolution;
+    private SolutionSpace oppSolutionIfAuctionWon;
+
+
+    private double ratioMarginalCost = 0.9;
+    private double ratioMarginalCostOpp = 0.8; // ration to bid higher price than our opponents
+
     
     @Override
     public void setup(Topology topology, TaskDistribution distribution,
@@ -58,7 +65,8 @@ public class AuctionAgent implements AuctionBehavior {
         this.random = new Random(42);
 
         this.centralizedPlanner = new CentralizedAgent(topology, distribution, agent);
-        this.wonTasks = new ArrayList<>();
+        this.myWonTasks = new ArrayList<>();
+        this.oppWonTasks = new ArrayList<>();
         this.nAuctionRounds = 0;
     }
     
@@ -84,12 +92,19 @@ public class AuctionAgent implements AuctionBehavior {
             if (i == agent.id()) {
                 s += " (me)";
             }
+
             System.out.println(s);
         }
         
         if (winner == agent.id()) {
-            this.wonTasks.add(previous);
-            this.currentSolution = this.solutionIfAuctionWon;
+            this.ratioMarginalCostOpp = this.ratioMarginalCostOpp - 0.01; // if we win, we will reduce ratio and bid a lower price
+            this.myWonTasks.add(previous);
+            this.myCurrentSolution = this.mySolutionIfAuctionWon;
+        }
+        else{
+            this.ratioMarginalCostOpp = this.ratioMarginalCostOpp + 0.01; // if we lose, we will increase ratio and bid a higher price
+            this.oppWonTasks.add(previous);
+            this.oppCurrentSolution = this.oppSolutionIfAuctionWon;
         }
         this.nAuctionRounds++;
     }
@@ -117,30 +132,47 @@ public class AuctionAgent implements AuctionBehavior {
         }
         
         // TODO try to get the first with a I-want-this weight of 1, 0.8, 0.5, 0.25, 0.1
-        List oldAndNew = new ArrayList<Task>(this.wonTasks);
-        oldAndNew.add(task);
-        System.out.println("in round " + this.nAuctionRounds + " with task " + task.toString() + " we have " + this.wonTasks.size() + " bids won");
+        List myOldAndNew = new ArrayList<Task>(this.myWonTasks);
+        List oppOldAndNew = new ArrayList<Task>(this.oppWonTasks);
+
+        myOldAndNew.add(task);
+        oppOldAndNew.add(task);
+
+        System.out.println("in round " + this.nAuctionRounds + " with task " + task.toString() + " we have " + this.myWonTasks.size() + " bids won");
+        System.out.println("in round " + this.nAuctionRounds + " with task " + task.toString() + " opponents have " + this.oppWonTasks.size() + " bids won");
+
+        // TODO split the timeoutBID to two parts
+        this.mySolutionIfAuctionWon = this.centralizedPlanner.solution(agent.vehicles(), myOldAndNew, this.timeoutBid);
+        this.oppSolutionIfAuctionWon = this.centralizedPlanner.solution(agent.vehicles(), oppOldAndNew, this.timeoutBid);
         
-        this.solutionIfAuctionWon = this.centralizedPlanner.solution(agent.vehicles(), oldAndNew, this.timeoutBid);
+        double myPrice;
+        double oppPrice;
         
-        double price;
-        
-        if (this.currentSolution == null) {
-            price = this.solutionIfAuctionWon.cost();
+        if (this.myCurrentSolution == null) {
+            myPrice = this.mySolutionIfAuctionWon.cost();
         } else {
-            price = this.solutionIfAuctionWon.cost() - this.currentSolution.cost();
+            myPrice = this.mySolutionIfAuctionWon.cost() - this.myCurrentSolution.cost();
         }
-        System.out.println("we're asking for " + price + " task is worth: " + task.reward);
+
+        if (this.oppCurrentSolution == null) {
+            oppPrice = this.oppSolutionIfAuctionWon.cost();
+        } else {
+            oppPrice = this.oppSolutionIfAuctionWon.cost() - this.oppCurrentSolution.cost();
+        }
+
+        System.out.println("we're asking for " + myPrice + " task is worth: " + task.reward);
+        System.out.println("our opponents may aski for " + oppPrice + " task is worth: " + task.reward);
     
         // TODO optimise this. I think a balance between being too greedy
         // if we don't make any money with it, we would rather discard it
-        if (task.reward < price && this.wonTasks.size() > 0) {
+        if (task.reward < myPrice && this.myWonTasks.size() > 0) {
             return null;
         } else {
-            price *= 1 + this.random.nextDouble() * 0.3;
+            myPrice = this.ratioMarginalCost * oppPrice;
+//            myPrice *= 1 + this.random.nextDouble() * 0.3;
         }
         
-        return (long)Math.ceil(price);
+        return (long)Math.ceil(myPrice);
     }
     
     @Override
