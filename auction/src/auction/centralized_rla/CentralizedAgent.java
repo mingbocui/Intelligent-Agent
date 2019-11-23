@@ -12,7 +12,6 @@ import java.util.stream.Collectors;
 
 public class CentralizedAgent {
     private double randomSolutionSelection;
-    private long timeoutPlan;
     private int nRetainedSolutions;
     private boolean useSpanningTreeForCost;
     private boolean useRandomInitSolution;
@@ -26,8 +25,7 @@ public class CentralizedAgent {
 //    private List<Vehicle> vehicles;
 
 
-    public CentralizedAgent(long timeoutPlan, Topology topology, TaskDistribution distribution, Agent agent) {
-        this.timeoutPlan = timeoutPlan;
+    public CentralizedAgent(Topology topology, TaskDistribution distribution, Agent agent) {
         // As suggested from the slides, 0.3 to 0.5 would be a good choice for p.
         this.randomSolutionSelection = agent.readProperty("random-solution-selection", Double.class, 0.3);
         this.nRetainedSolutions = agent.readProperty("nb-retained-solutions", Integer.class, 10);
@@ -40,7 +38,7 @@ public class CentralizedAgent {
         this.rnd = new Random(this.usedSeed);
     }
 
-    public SolutionSpace solution(List<Vehicle> vehicles, List<Task> tasks) {
+    public SolutionSpace solution(List<Vehicle> vehicles, List<Task> tasks, long timeout) {
         long startTime = System.currentTimeMillis();
         SolutionSpace initSpace;
         if (this.useRandomInitSolution) {
@@ -114,7 +112,7 @@ public class CentralizedAgent {
             if (false && nIterations % 1000 == 0) Utils.log(token, String.format("\tcurrent combinedCost (cost): %s (%s), lowest so far: %s",
                     initSpace.combinedCost(), initSpace.cost(), currentBest.combinedCost()));
             
-            if (outOfTime(startTime, nIterations)) {
+            if (outOfTime(startTime, nIterations, timeout)) {
                 if (this.log)  Utils.log(token, "\tout of time!");
                 break;
             }
@@ -147,16 +145,16 @@ public class CentralizedAgent {
         this.useClosestPickUpSolution, this.useRandomInitSolution, this.useSpanningTreeForCost, this.nRetainedSolutions, this.randomSolutionSelection, this.nNewCachedSolutions, this.usedSeed);
     }
     
-    private boolean outOfTime(long startTime, int nIterations) {
+    private boolean outOfTime(long startTime, int nIterations, long timeout) {
         if (nIterations == 0) return false;
         
         long executedTime = System.currentTimeMillis() - startTime;
         double runTimeEstimateEachRound = (double) executedTime / nIterations;
         
         // just to be sure that we don't compute for too long
-        boolean out = (executedTime + runTimeEstimateEachRound * 2.0) >= this.timeoutPlan - 123;
+        boolean out = (executedTime + runTimeEstimateEachRound * 2.0) >= timeout- 123;
         
-        if (out) Utils.log(token, "we used " + executedTime + " of " + this.timeoutPlan + ", we had " + (this.timeoutPlan - executedTime) + " left");
+        if (out) Utils.log(token, "we used " + executedTime + " of " + timeout+ ", we had " + (timeout - executedTime) + " left");
         return out;
     }
 }

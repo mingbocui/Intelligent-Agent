@@ -6,6 +6,7 @@ import logist.LogistSettings;
 import logist.agent.Agent;
 import logist.behavior.AuctionBehavior;
 import logist.config.Parsers;
+import logist.plan.Action;
 import logist.plan.Plan;
 import logist.simulation.Vehicle;
 import logist.task.Task;
@@ -15,6 +16,7 @@ import logist.topology.Topology;
 import logist.topology.Topology.City;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class AuctionAgent implements AuctionBehavior {
 
@@ -55,7 +57,7 @@ public class AuctionAgent implements AuctionBehavior {
         //long seed = -9019554669489983951L * currentCity.hashCode() * agent.id();
         this.random = new Random(42);
 
-        this.centralizedPlanner = new CentralizedAgent(timeoutBid, topology, distribution, agent);
+        this.centralizedPlanner = new CentralizedAgent(topology, distribution, agent);
         this.wonTasks = new ArrayList<>();
         this.nAuctionRounds = 0;
     }
@@ -118,7 +120,7 @@ public class AuctionAgent implements AuctionBehavior {
         oldAndNew.add(task);
         System.out.println("in round " + this.nAuctionRounds + " with task " + task.toString() + " we have " + this.wonTasks.size() + " bids won");
         
-        this.solutionIfAuctionWon = this.centralizedPlanner.solution(agent.vehicles(), oldAndNew);
+        this.solutionIfAuctionWon = this.centralizedPlanner.solution(agent.vehicles(), oldAndNew, this.timeoutBid);
         
         double price;
         
@@ -141,10 +143,10 @@ public class AuctionAgent implements AuctionBehavior {
     
     @Override
     public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
-        if (this.currentSolution == null) {
+        if (tasks.size() == 0) {
             return SolutionSpace.emptyPlan(this.agent.vehicles());
         }
-        var b = this.currentSolution.getPlans();
-        return b;
+        
+        return centralizedPlanner.solution(vehicles, tasks.stream().collect(Collectors.toList()), this.timeoutPlan).getPlans();
     }
 }
