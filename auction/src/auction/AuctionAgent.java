@@ -130,13 +130,14 @@ public class AuctionAgent implements AuctionBehavior {
             price = this.solutionIfAuctionWon.cost() - this.currentSolution.cost();
         }
         System.out.println("we're asking for " + price + " task is worth: " + task.reward);
-        
+    
+        // TODO optimise this. I think a balance between being too greedy
         // if we don't make any money with it, we would rather discard it
         if (task.reward < price && this.wonTasks.size() > 0) {
             return null;
+        } else {
+            price *= 1 + this.random.nextDouble() * 0.3;
         }
-        
-        price *= 1 + this.random.nextDouble() * 0.3;
         
         return (long)Math.ceil(price);
     }
@@ -146,6 +147,11 @@ public class AuctionAgent implements AuctionBehavior {
         if (tasks.size() == 0) {
             return SolutionSpace.emptyPlan(this.agent.vehicles());
         }
+        
+        // TODO mingbao can you use the already computed plan, but replace the old tasks with the new ones?
+        // you'll probably need to use `Action.toString()` and then extract some shit in order to find compare the tasks
+        // then just do `newPlan.appendPickup(task)`
+        // the reason is that we don't need to recompute the old solution, and we don't want to.
         
         return centralizedPlanner.solution(vehicles, tasks.stream().collect(Collectors.toList()), this.timeoutPlan).getPlans();
     }
