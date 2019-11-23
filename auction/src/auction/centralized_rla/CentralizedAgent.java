@@ -22,6 +22,7 @@ public class CentralizedAgent {
     private Random rnd;
     private String token = "CentralizedAgent";
     private boolean log = false;
+    private long timoutReduction = 300;
 //    private List<Vehicle> vehicles;
 
 
@@ -152,7 +153,7 @@ public class CentralizedAgent {
         double runTimeEstimateEachRound = (double) executedTime / nIterations;
         
         // just to be sure that we don't compute for too long
-        boolean out = (executedTime + runTimeEstimateEachRound * 2.0) >= timeout- 123;
+        boolean out = (executedTime + runTimeEstimateEachRound * 2.0) >= timeout - this.timoutReduction;
         
         if (out) Utils.log(token, "we used " + executedTime + " of " + timeout+ ", we had " + (timeout - executedTime) + " left");
         return out;

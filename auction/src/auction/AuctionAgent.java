@@ -152,14 +152,14 @@ public class AuctionAgent implements AuctionBehavior {
             price = this.solutionIfAuctionWon.cost() - this.currentSolution.cost();
         }
         System.out.print("we're asking for " + price + " task is worth: " + task.reward + " bidSCale " + this.bidScale);
+        
+        price *= 1 + this.bidScale;
     
         // we need to run even at least
         if (this.moneyCollected != 0 && this.moneyCollected < this.solutionIfAuctionWon.cost()) {
-            price = (this.solutionIfAuctionWon.cost() - this.moneyCollected) * 0.35;
-            System.out.print(" adjusting price to get our money back");
+            price = Math.max((this.solutionIfAuctionWon.cost() - this.moneyCollected) * 0.50, 2000);
+            System.out.print(" adjusting price to get our money back, we need " + (this.solutionIfAuctionWon.cost() - this.moneyCollected) + " to break even");
         }
-        
-        price *= 1 + this.bidScale;
     
         System.out.println(" after adjusting we ask for " + price);
         return (long)Math.ceil(price);
