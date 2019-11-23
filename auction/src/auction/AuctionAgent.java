@@ -6,14 +6,12 @@ import logist.LogistSettings;
 import logist.agent.Agent;
 import logist.behavior.AuctionBehavior;
 import logist.config.Parsers;
-import logist.plan.Action;
 import logist.plan.Plan;
 import logist.simulation.Vehicle;
 import logist.task.Task;
 import logist.task.TaskDistribution;
 import logist.task.TaskSet;
 import logist.topology.Topology;
-import logist.topology.Topology.City;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -32,6 +30,9 @@ public class AuctionAgent implements AuctionBehavior {
     private int nAuctionRounds;
     private SolutionSpace currentSolution;
     private SolutionSpace solutionIfAuctionWon;
+    private double bidScale;
+    private double randomFactor;
+    private long moneyCollected;
     
     @Override
     public void setup(Topology topology, TaskDistribution distribution,
@@ -60,6 +61,9 @@ public class AuctionAgent implements AuctionBehavior {
         this.centralizedPlanner = new CentralizedAgent(topology, distribution, agent);
         this.wonTasks = new ArrayList<>();
         this.nAuctionRounds = 0;
+        this.bidScale = 0.0;
+        this.randomFactor = 0.2;
+        this.moneyCollected = 0;
     }
     
     /**
@@ -76,6 +80,9 @@ public class AuctionAgent implements AuctionBehavior {
     public void auctionResult(Task previous, int winner, Long[] bids) {
         // TODO get lowest bid -> adapt
         System.out.println("auction result, viewing from agent " + agent.id() + " n round " + nAuctionRounds);
+    
+        long ourBid = bids[agent.id()];
+        long nextOpponentBid = Long.MAX_VALUE;
         for (int i = 0; i < bids.length; i++) {
             var s = String.format(">>> agent: %d bids: %d", i, bids[i]);
             if (i == winner) {
@@ -84,13 +91,31 @@ public class AuctionAgent implements AuctionBehavior {
             if (i == agent.id()) {
                 s += " (me)";
             }
+            
+            if (bids[i] < nextOpponentBid && i != agent.id()) {
+               nextOpponentBid = bids[i] ;
+            }
             System.out.println(s);
         }
         
+        // our min
+        // 10  1   -> marginalPrice + a * (min - our) ;
+        //                                 9
+        // 9 // 1
+        // 8   10  -> marginalPrice + a * (min - our)
+        //                                 2 / 8
+        
+        // TODO check if we get closer to opponent, if yes: approach min price
+        System.out.print(String.format("our bid: %d, next Opponent: %d, adjusting bidScale from %4.4f to: ", ourBid, nextOpponentBid, this.bidScale));
         if (winner == agent.id()) {
+            this.moneyCollected += ourBid;
             this.wonTasks.add(previous);
             this.currentSolution = this.solutionIfAuctionWon;
+            if (ourBid != 0.0) this.bidScale = (double)(nextOpponentBid - ourBid) / (nextOpponentBid + ourBid);
+        } else {
+            if (nextOpponentBid != 0.0) this.bidScale = (double)(nextOpponentBid - ourBid) / (nextOpponentBid + ourBid);
         }
+        System.out.println(this.bidScale);
         this.nAuctionRounds++;
     }
     
@@ -112,10 +137,6 @@ public class AuctionAgent implements AuctionBehavior {
      */
     @Override
     public Long askPrice(Task task) {
-        if (task.reward == 0) {
-            return null;
-        }
-        
         // TODO try to get the first with a I-want-this weight of 1, 0.8, 0.5, 0.25, 0.1
         List oldAndNew = new ArrayList<Task>(this.wonTasks);
         oldAndNew.add(task);
@@ -130,16 +151,17 @@ public class AuctionAgent implements AuctionBehavior {
         } else {
             price = this.solutionIfAuctionWon.cost() - this.currentSolution.cost();
         }
-        System.out.println("we're asking for " + price + " task is worth: " + task.reward);
+        System.out.print("we're asking for " + price + " task is worth: " + task.reward + " bidSCale " + this.bidScale);
     
-        // TODO optimise this. I think a balance between being too greedy
-        // if we don't make any money with it, we would rather discard it
-        if (task.reward < price && this.wonTasks.size() > 0) {
-            return null;
-        } else {
-            price *= 1 + this.random.nextDouble() * 0.3;
+        // we need to run even at least
+        if (this.moneyCollected != 0 && this.moneyCollected < this.solutionIfAuctionWon.cost()) {
+            price = (this.solutionIfAuctionWon.cost() - this.moneyCollected) * 0.35;
+            System.out.print(" adjusting price to get our money back");
         }
         
+        price *= 1 + this.bidScale;
+    
+        System.out.println(" after adjusting we ask for " + price);
         return (long)Math.ceil(price);
     }
     
