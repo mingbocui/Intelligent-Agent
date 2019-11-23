@@ -79,7 +79,7 @@ public class AuctionAgent implements AuctionBehavior {
     @Override
     public void auctionResult(Task previous, int winner, Long[] bids) {
         // TODO get lowest bid -> adapt
-        System.out.println("auction result, viewing from agent " + agent.id() + " n round " + nAuctionRounds);
+        System.out.println(String.format("auction result, viewing from agent %d  n round %d, we won %d", + agent.id(), nAuctionRounds, this.wonTasks.size()));
     
         long ourBid = bids[agent.id()];
         long nextOpponentBid = Long.MAX_VALUE;
@@ -98,22 +98,14 @@ public class AuctionAgent implements AuctionBehavior {
             System.out.println(s);
         }
         
-        // our min
-        // 10  1   -> marginalPrice + a * (min - our) ;
-        //                                 9
-        // 9 // 1
-        // 8   10  -> marginalPrice + a * (min - our)
-        //                                 2 / 8
-        
-        // TODO check if we get closer to opponent, if yes: approach min price
         System.out.print(String.format("our bid: %d, next Opponent: %d, adjusting bidScale from %4.4f to: ", ourBid, nextOpponentBid, this.bidScale));
         if (winner == agent.id()) {
             this.moneyCollected += ourBid;
             this.wonTasks.add(previous);
             this.currentSolution = this.solutionIfAuctionWon;
-            if (ourBid != 0.0) this.bidScale = (double)(nextOpponentBid - ourBid) / (nextOpponentBid + ourBid);
+            this.bidScale = (double)(nextOpponentBid - ourBid) / (nextOpponentBid + ourBid);
         } else {
-            if (nextOpponentBid != 0.0) this.bidScale = (double)(nextOpponentBid - ourBid) / (nextOpponentBid + ourBid);
+            this.bidScale = (double)(nextOpponentBid - ourBid) / (nextOpponentBid + ourBid);
         }
         System.out.println(this.bidScale);
         this.nAuctionRounds++;
@@ -152,15 +144,24 @@ public class AuctionAgent implements AuctionBehavior {
             price = this.solutionIfAuctionWon.cost() - this.currentSolution.cost();
         }
         System.out.print("we're asking for " + price + " task is worth: " + task.reward + " bidSCale " + this.bidScale);
-        
-        price *= 1 + this.bidScale;
     
-        // we need to run even at least
-        if (this.moneyCollected != 0 && this.moneyCollected < this.solutionIfAuctionWon.cost()) {
-            price = Math.max((this.solutionIfAuctionWon.cost() - this.moneyCollected) * 0.50, 2000);
-            System.out.print(" adjusting price to get our money back, we need " + (this.solutionIfAuctionWon.cost() - this.moneyCollected) + " to break even");
+        price *= 1 + this.bidScale;
+        
+        // aggressive underbidding at the start
+        if (nAuctionRounds <= 2) {
+            price *= 1 - (2 - nAuctionRounds) * 0.2;
         }
     
+        // we need to run even at least
+        if (this.moneyCollected != 0 && (this.moneyCollected + price) < this.solutionIfAuctionWon.cost()) {
+            price = Math.max((this.solutionIfAuctionWon.cost() - this.moneyCollected) * 0.50, 2000) * (1 + this.bidScale);
+            System.out.print(" adjusting price to get our money back, we need " + (this.solutionIfAuctionWon.cost() - this.moneyCollected) + " to break even");
+        }
+        
+        if (nAuctionRounds >= 4) {
+            price = Math.max(this.solutionIfAuctionWon.cost() - this.moneyCollected, price);
+        }
+        
         System.out.println(" after adjusting we ask for " + price);
         return (long)Math.ceil(price);
     }
@@ -175,6 +176,8 @@ public class AuctionAgent implements AuctionBehavior {
         // you'll probably need to use `Action.toString()` and then extract some shit in order to find compare the tasks
         // then just do `newPlan.appendPickup(task)`
         // the reason is that we don't need to recompute the old solution, and we don't want to.
+    
+        System.out.println(String.format("we got %d, cost: %f, profit: %f", this.moneyCollected, this.currentSolution.cost(), this.moneyCollected - this.currentSolution.cost()));
         
         return centralizedPlanner.solution(vehicles, tasks.stream().collect(Collectors.toList()), this.timeoutPlan).getPlans();
     }
