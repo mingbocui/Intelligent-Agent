@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<agents>
+	<!-- A list of agents and their behavior classes -->
+
+
+	<agent name="auction-main-29">
+		<set class-path="bin/"/>
+		<set class-name="auction.AuctionAgent"/>
+	</agent>
+
+</agents>
