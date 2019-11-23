@@ -74,6 +74,7 @@ public class AuctionAgent implements AuctionBehavior {
      */
     @Override
     public void auctionResult(Task previous, int winner, Long[] bids) {
+        // TODO get lowest bid -> adapt
         System.out.println("auction result, viewing from agent " + agent.id() + " n round " + nAuctionRounds);
         for (int i = 0; i < bids.length; i++) {
             var s = String.format(">>> agent: %d bids: %d", i, bids[i]);

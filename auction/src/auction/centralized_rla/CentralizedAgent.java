@@ -69,7 +69,7 @@ public class CentralizedAgent {
 
         while (true) {
             if (this.log) Utils.log(token, "in iteration " + nIterations);
-            List<SolutionSpace> newSolutions = initSpace.changeVehicle().parallelStream()
+            List<SolutionSpace> newSolutions = initSpace.changeVehicle().stream()
                     .flatMap(s -> s.permuteActions().stream()).collect(Collectors.toList());
             newSolutions.add(initSpace);
     
