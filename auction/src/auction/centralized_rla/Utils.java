@@ -20,4 +20,8 @@ public class Utils {
         
         return minElements;
     }
+    
+    public static void log(String token, String message) {
+        System.out.println(token + " :: " + message);
+    }
 }

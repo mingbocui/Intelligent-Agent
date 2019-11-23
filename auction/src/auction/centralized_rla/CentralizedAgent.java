@@ -1,19 +1,16 @@
 package auction.centralized_rla;
 
-import logist.LogistSettings;
 import logist.agent.Agent;
-import logist.behavior.CentralizedBehavior;
-import logist.config.Parsers;
 import logist.plan.Plan;
 import logist.simulation.Vehicle;
+import logist.task.Task;
 import logist.task.TaskDistribution;
-import logist.task.TaskSet;
 import logist.topology.Topology;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class CentralizedAgent implements CentralizedBehavior {
+public class CentralizedAgent {
     private double randomSolutionSelection;
     private long timeoutPlan;
     private int nRetainedSolutions;
@@ -24,25 +21,13 @@ public class CentralizedAgent implements CentralizedBehavior {
     private int nNewCachedSolutions;
     private long usedSeed;
     private Random rnd;
+    private String token = "CentralizedAgent";
+    private boolean log = false;
 //    private List<Vehicle> vehicles;
 
 
-    public CentralizedAgent(long timeoutPlan){
+    public CentralizedAgent(long timeoutPlan, Topology topology, TaskDistribution distribution, Agent agent) {
         this.timeoutPlan = timeoutPlan;
-//        this.vehicles = vehicles;
-    }
-    
-    @Override
-    public void setup(Topology topology, TaskDistribution distribution, Agent agent) {
-//        LogistSettings ls = null;
-//        try {
-//            ls = Parsers.parseSettings("config/settings_auction.xml");
-//        } catch (Exception exc) {
-//            System.out.println("There was a problem loading the configuration file.");
-//        }
-//
-//        this.timeoutPlan = ls.get(LogistSettings.TimeoutKey.PLAN);
-        
         // As suggested from the slides, 0.3 to 0.5 would be a good choice for p.
         this.randomSolutionSelection = agent.readProperty("random-solution-selection", Double.class, 0.3);
         this.nRetainedSolutions = agent.readProperty("nb-retained-solutions", Integer.class, 10);
@@ -54,28 +39,23 @@ public class CentralizedAgent implements CentralizedBehavior {
         this.usedSeed = agent.readProperty("random-seed", Integer.class, 41121);
         this.rnd = new Random(this.usedSeed);
     }
-    
-    @Override
-    public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
-        return solutionSpace(vehicles, tasks).getPlans();
-    }
 
-    public SolutionSpace solutionSpace(List<Vehicle> vehicles, TaskSet tasks) {
+    public SolutionSpace solution(List<Vehicle> vehicles, List<Task> tasks) {
         long startTime = System.currentTimeMillis();
         SolutionSpace initSpace;
         if (this.useRandomInitSolution) {
-            System.out.println("Using random init solution");
+            if (this.log) System.out.println("Using random init solution");
             initSpace = SolutionSpace.randomSolution(vehicles, tasks, this.useSpanningTreeForCost, this.rnd);
         } else if (this.useClosestPickUpSolution) {
             if (this.useClosestPickUpSolutionByPickup) {
-                System.out.println("Using closest pickup solution");
+                if (this.log) System.out.println("Using closest pickup solution");
                 initSpace = SolutionSpace.assignClosestTasksByPickup(vehicles, tasks, this.useSpanningTreeForCost, this.rnd);
             } else {
-                System.out.println("Using closest delivery solution");
+                if (this.log) System.out.println("Using closest delivery solution");
                 initSpace = SolutionSpace.assignClosestTasksByDelivery(vehicles, tasks, this.useSpanningTreeForCost, this.rnd);
             }
         } else {
-            System.out.println("Using largest vehicle init solution");
+            if (this.log) System.out.println("Using largest vehicle init solution");
             initSpace = SolutionSpace.largestVehicleSolution(vehicles, tasks, this.useSpanningTreeForCost);
         }
 
@@ -84,33 +64,37 @@ public class CentralizedAgent implements CentralizedBehavior {
         int nIterations = 0;
 
         SolutionSpace currentBest = new SolutionSpace(initSpace);
+        
+        if (tasks.size() <= 1) {
+            return currentBest;
+        }
 
         while (true) {
-            System.out.println(">>> in iteration " + nIterations);
+            if (this.log) Utils.log(token, "in iteration " + nIterations);
             List<SolutionSpace> newSolutions = initSpace.changeVehicle().parallelStream()
                     .flatMap(s -> s.permuteActions().stream()).collect(Collectors.toList());
             newSolutions.add(initSpace);
-
-            System.out.println("\twe have " + newSolutions.size() + " new sols");
+    
+            if (this.log) Utils.log(token, "\twe have " + newSolutions.size() + " new sols");
 
             boolean stuck = candidateSolutions.size() >= this.nRetainedSolutions
                     && candidateSolutions.stream().mapToDouble(SolutionSpace::combinedCost).distinct().limit(2).count() <= 1;
             boolean chooseRandom = false;
             if (stuck || rnd.nextDouble() < this.randomSolutionSelection) {
                 if (!currentMinSolutions.isEmpty() && rnd.nextDouble() < 0.5) {
-                    System.out.println("\tselecting sol from queue, " + (currentMinSolutions.size() - 1) + " left to explore");
+                    if (this.log) Utils.log(token, "\tselecting sol from queue, " + (currentMinSolutions.size() - 1) + " left to explore");
                     currentMinSolutions.sort(Comparator.comparingDouble(SolutionSpace::combinedCost));
                     initSpace = currentMinSolutions.remove(0);
                 } else {
-                    System.out.println("\tselecting random sol");
+                    if (this.log) Utils.log(token, "\tselecting random sol");
                     initSpace = newSolutions.get(rnd.nextInt(newSolutions.size()));
                 }
                 chooseRandom = true;
             } else {
                 var minSols = Utils.minimalElements(newSolutions);
-                System.out.println("\tfound " + minSols.size() + " new min solutions");
+                //System.out.println("\tfound " + minSols.size() + " new min solutions");
                 var newBest = minSols.get(rnd.nextInt(minSols.size()));
-                System.out.println("\tselecting best sol");
+                //System.out.println("\tselecting best sol");
                 initSpace = newBest;
 
                 if (minSols.get(0).combinedCost() < currentBest.combinedCost()) {
@@ -123,14 +107,15 @@ public class CentralizedAgent implements CentralizedBehavior {
             if (initSpace.combinedCost() < currentBest.combinedCost()) {
                 currentBest = initSpace;
             }
-
-            System.out.println(String.format("\tcurrent combinedCost (cost): %s (%s), lowest so far: %s",
-                    initSpace.combinedCost(), initSpace.cost(), currentBest.combinedCost()));
+    
 
             nIterations += 1;
-
+    
+            if (false && nIterations % 1000 == 0) Utils.log(token, String.format("\tcurrent combinedCost (cost): %s (%s), lowest so far: %s",
+                    initSpace.combinedCost(), initSpace.cost(), currentBest.combinedCost()));
+            
             if (outOfTime(startTime, nIterations)) {
-                System.out.println("\tout of time!");
+                if (this.log)  Utils.log(token, "\tout of time!");
                 break;
             }
             if (candidateSolutions.size() > this.nRetainedSolutions) candidateSolutions.remove(0);
@@ -139,19 +124,20 @@ public class CentralizedAgent implements CentralizedBehavior {
             if (candidateSolutions.size() >= this.nRetainedSolutions
                     && !chooseRandom // done to prevent overwriting the selection above from being stuck
                     && candidateSolutions.stream().allMatch(s -> s.combinedCost() < finalInitSpace.combinedCost())) {
-                System.out.print("\t*** restarting search using old best solution, proposed sol has combinedCost of: " + finalInitSpace.combinedCost() + ", saved combinedCosts: ");
-                candidateSolutions.forEach(c -> System.out.print(c.combinedCost() + ", "));
-                System.out.println();
+    
+                //System.out.print("\t*** restarting search using old best solution, proposed sol has combinedCost of: " + finalInitSpace.combinedCost() + ", saved combinedCosts: ");
+                //candidateSolutions.forEach(c -> System.out.print(c.combinedCost() + ", "));
+                //System.out.println();
                 initSpace = currentBest;
                 candidateSolutions.clear();
             }
 
             candidateSolutions.add(initSpace);
         }
-
-        System.out.println(String.format("*** found solution after %d iterations, combinedCost (cost): %s (%s), profit: %s",
+    
+        if (this.log) Utils.log(token, String.format("*** found solution after %d iterations, combinedCost (cost): %s (%s), profit: %s",
                 nIterations, currentBest.combinedCost(), currentBest.cost(), currentBest.profit()));
-        System.out.println("\tusing config: " + config());
+        if (this.log) Utils.log(token, "\tusing config: " + config());
 
         return currentBest;
     }
@@ -168,6 +154,9 @@ public class CentralizedAgent implements CentralizedBehavior {
         double runTimeEstimateEachRound = (double) executedTime / nIterations;
         
         // just to be sure that we don't compute for too long
-        return (executedTime + runTimeEstimateEachRound * 2.0) > this.timeoutPlan;
+        boolean out = (executedTime + runTimeEstimateEachRound * 2.0) >= this.timeoutPlan - 123;
+        
+        if (out) Utils.log(token, "we used " + executedTime + " of " + this.timeoutPlan + ", we had " + (this.timeoutPlan - executedTime) + " left");
+        return out;
     }
 }

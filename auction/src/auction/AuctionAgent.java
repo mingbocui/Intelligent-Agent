@@ -1,8 +1,8 @@
 package auction;
 
 import auction.centralized_rla.CentralizedAgent;
+import auction.centralized_rla.SolutionSpace;
 import logist.LogistSettings;
-import logist.Measures;
 import logist.agent.Agent;
 import logist.behavior.AuctionBehavior;
 import logist.config.Parsers;
@@ -25,13 +25,11 @@ public class AuctionAgent implements AuctionBehavior {
     private TaskDistribution distribution;
     private Agent agent;
     private Random random;
-    private Vehicle vehicle;
-    private City currentCity;
-    private TaskSet previousTasks;
-    private TaskSet currentTasks;
+    private List<Task> wonTasks;
     private CentralizedAgent centralizedPlanner;
-    private List<Plan> solutionWithoutBid;
-    private List<Plan> solutionWithBid;
+    private int nAuctionRounds;
+    private SolutionSpace currentSolution;
+    private SolutionSpace solutionIfAuctionWon;
     
     @Override
     public void setup(Topology topology, TaskDistribution distribution,
@@ -51,14 +49,15 @@ public class AuctionAgent implements AuctionBehavior {
         this.topology = topology;
         this.distribution = distribution;
         this.agent = agent;
-        this.vehicle = agent.vehicles().get(0);
-        this.currentCity = vehicle.homeCity();
+        //this.vehicle = agent.vehicles().get(0);
+        //this.currentCity = vehicle.homeCity();
         
-        long seed = -9019554669489983951L * currentCity.hashCode() * agent.id();
-        this.random = new Random(seed);
+        //long seed = -9019554669489983951L * currentCity.hashCode() * agent.id();
+        this.random = new Random(42);
 
-        this.centralizedPlanner = new CentralizedAgent(timeoutPlan);
-        this.previousTasks = TaskSet.create(new Task[0]);
+        this.centralizedPlanner = new CentralizedAgent(timeoutBid, topology, distribution, agent);
+        this.wonTasks = new ArrayList<>();
+        this.nAuctionRounds = 0;
     }
     
     /**
@@ -73,18 +72,23 @@ public class AuctionAgent implements AuctionBehavior {
      */
     @Override
     public void auctionResult(Task previous, int winner, Long[] bids) {
-        System.out.println("auction result, viewing from agent " + agent.id());
+        System.out.println("auction result, viewing from agent " + agent.id() + " n round " + nAuctionRounds);
         for (int i = 0; i < bids.length; i++) {
             var s = String.format(">>> agent: %d bids: %d", i, bids[i]);
             if (i == winner) {
                 s += " winner";
             }
+            if (i == agent.id()) {
+                s += " (me)";
+            }
             System.out.println(s);
         }
         
         if (winner == agent.id()) {
-            currentCity = previous.deliveryCity;
+            this.wonTasks.add(previous);
+            this.currentSolution = this.solutionIfAuctionWon;
         }
+        this.nAuctionRounds++;
     }
     
     
@@ -105,54 +109,42 @@ public class AuctionAgent implements AuctionBehavior {
      */
     @Override
     public Long askPrice(Task task) {
-//        if (vehicle.capacity() < task.weight)
-//            return null;
-//
-//        long distanceTask = task.pickupCity.distanceUnitsTo(task.deliveryCity);
-//        long distanceSum = distanceTask
-//                + currentCity.distanceUnitsTo(task.pickupCity);
-//        double marginalCost = Measures.unitsToKM(distanceSum
-//                * vehicle.costPerKm());
-//
-//        double ratio = 1.0 + (random.nextDouble() * 0.05 * task.id);
-//        double bid = ratio * marginalCost;
-//
-//        return Math.round(bid);
-//        previousTasks.a
-//        CentralizedAgent planner = new CentralizedAgent(timeoutPlan);
-//        currentTasks = previousTasks.add(task);
-//        currentTasks = previousTasks.add(previousTasks.size(), task);
-//        TaskSet a;
-//        a.add
-//        previousTasks.stream().
-//        TaskSet tempSet = TaskSet.create(task);
-//        currentTasks = TaskSet.intersect(previousTasks, task);
-//        currentTasks = previousTasks.addAll(task);
-        Double marginalCost_double = this.centralizedPlanner.solutionSpace(agent.vehicles(), currentTasks).combinedCost() - this.centralizedPlanner.solutionSpace(agent.vehicles(), previousTasks).combinedCost();
-
-        long marginalCost = marginalCost_double.longValue();
-
-        return marginalCost;
+        if (task.reward == 0) {
+            return null;
+        }
+        
+        // TODO try to get the first with a I-want-this weight of 1, 0.8, 0.5, 0.25, 0.1
+        List oldAndNew = new ArrayList<Task>(this.wonTasks);
+        oldAndNew.add(task);
+        System.out.println("in round " + this.nAuctionRounds + " with task " + task.toString() + " we have " + this.wonTasks.size() + " bids won");
+        
+        this.solutionIfAuctionWon = this.centralizedPlanner.solution(agent.vehicles(), oldAndNew);
+        
+        double price;
+        
+        if (this.currentSolution == null) {
+            price = this.solutionIfAuctionWon.cost();
+        } else {
+            price = this.solutionIfAuctionWon.cost() - this.currentSolution.cost();
+        }
+        System.out.println("we're asking for " + price + " task is worth: " + task.reward);
+        
+        // if we don't make any money with it, we would rather discard it
+        if (task.reward < price && this.wonTasks.size() > 0) {
+            return null;
+        }
+        
+        price *= 1 + this.random.nextDouble() * 0.3;
+        
+        return (long)Math.ceil(price);
     }
     
     @Override
     public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
-
-
-
-//		System.out.println("Agent " + agent.id() + " has tasks " + tasks);
-        
-//        Plan planVehicle1 = Utils.naivePlan(vehicle, tasks);
-//
-//        List<Plan> plans = new ArrayList<Plan>();
-//        plans.add(planVehicle1);
-//        while (plans.size() < vehicles.size())
-//            plans.add(Plan.EMPTY);
-
-//        CentralizedAgent planner = new CentralizedAgent(timeoutPlan);
-
-        List<Plan> plans = this.centralizedPlanner.plan(vehicles, tasks);
-        
-        return plans;
+        if (this.currentSolution == null) {
+            return SolutionSpace.emptyPlan(this.agent.vehicles());
+        }
+        var b = this.currentSolution.getPlans();
+        return b;
     }
 }
