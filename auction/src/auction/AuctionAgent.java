@@ -153,7 +153,7 @@ public class AuctionAgent implements AuctionBehavior {
         if (nAuctionRounds <= 2) {
             price *= 1 - (2 - nAuctionRounds) * this.startCollectingFactor;
         } else {
-            final var deficit = this.solutionIfAuctionWon.cost() - this.moneyCollected;
+            final var deficit = (this.solutionIfAuctionWon.cost() - this.moneyCollected) / 2;
             System.out.print(" adjusting price to get our money back, we need " + deficit + " to break even");
             
             if (price < deficit && deficit > 0) {
