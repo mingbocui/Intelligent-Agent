@@ -1,0 +1,17 @@
+<project>
+    <property name="library.dir" value="./out/artifacts/auction_jar"/>
+    <property name="library.file" value="auction.jar"/>
+    <property name="library.path" value="${library.dir}/${library.file}" />
+    <property name="library.path.new" value="${library.dir}/new-${library.file}"/>
+
+    <target name="purge-superfluous-template">
+        <echo>Removing superfluous files from Java archive.</echo>
+
+        <jar destfile="${library.path.new}">
+            <zipfileset src="${library.path}" excludes="**/template/**"/>
+        </jar>
+
+        <delete file="${library.path}" />
+        <move file="${library.path.new}" tofile="${library.path}" />
+    </target>
+</project>
