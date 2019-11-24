@@ -36,6 +36,7 @@ public class AuctionAgent implements AuctionBehavior {
     private long nextOpponentBid;
     private long ourBid;
     private double startCollectingFactor;
+    private long nGreedyRounds;
     
     @Override
     public void setup(Topology topology, TaskDistribution distribution,
@@ -66,7 +67,8 @@ public class AuctionAgent implements AuctionBehavior {
         this.nAuctionRounds = 0;
         this.bidScale = 0.0;
         this.moneyCollected = 0;
-        this.startCollectingFactor = 0.2;
+        this.startCollectingFactor = 0.69;
+        this.nGreedyRounds = 2;
     }
     
     /**
@@ -150,23 +152,28 @@ public class AuctionAgent implements AuctionBehavior {
         price *= 1 + this.bidScale;
         
         // aggressive underbidding at the start
-        if (nAuctionRounds <= 2) {
-            price *= 1 - (2 - nAuctionRounds) * this.startCollectingFactor;
+        if (nAuctionRounds <= nGreedyRounds) {
+            price *= (1.0 - this.startCollectingFactor) / this.nGreedyRounds * (double)nAuctionRounds + this.startCollectingFactor;
         } else {
-            final var deficit = (this.solutionIfAuctionWon.cost() - this.moneyCollected) / 2;
+            final var deficit = this.solutionIfAuctionWon.cost() - this.moneyCollected;
             System.out.print(" adjusting price to get our money back, we need " + deficit + " to break even");
             
             if (price < deficit && deficit > 0) {
-                price = deficit;
+                // capping it in order not to ask a high price
+                if ((deficit - price) / price <= 0.3) {
+                    price = deficit;
+                } else {
+                    price *= 1.3;
+                }
             }
-            
-            if (price <= 0.0) {
-                price = (this.nextOpponentBid - this.ourBid) / (double) nAuctionRounds;
-            }
+    
+            // min cost to do the job
+            //price = Math.max(price, task.pathLength() * this.agent.vehicles().get(0).costPerKm());
         }
+        price = Math.max(price,  0.0);
         
         System.out.println(" after adjusting we ask for " + price);
-        return (long) Math.ceil(price + 1);
+        return (long) price;
     }
     
     @Override
