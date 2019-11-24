@@ -13,11 +13,12 @@ import logist.task.TaskDistribution;
 import logist.task.TaskSet;
 import logist.topology.Topology;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 public class AuctionAgent implements AuctionBehavior {
-
+    
     private long timeoutSetup;
     private long timeoutPlan;
     private long timeoutBid;
@@ -31,22 +32,22 @@ public class AuctionAgent implements AuctionBehavior {
     private SolutionSpace currentSolution;
     private SolutionSpace solutionIfAuctionWon;
     private double bidScale;
-    private double randomFactor;
     private long moneyCollected;
     private long nextOpponentBid;
     private long ourBid;
+    private double startCollectingFactor;
     
     @Override
     public void setup(Topology topology, TaskDistribution distribution,
                       Agent agent) {
-
+        
         LogistSettings ls = null;
         try {
             ls = Parsers.parseSettings("config/settings_auction.xml");
         } catch (Exception exc) {
             System.out.println("There was a problem loading the configuration file.");
         }
-
+        
         this.timeoutSetup = ls.get(LogistSettings.TimeoutKey.SETUP);
         this.timeoutPlan = ls.get(LogistSettings.TimeoutKey.PLAN);
         this.timeoutBid = ls.get(LogistSettings.TimeoutKey.BID);
@@ -59,13 +60,13 @@ public class AuctionAgent implements AuctionBehavior {
         
         //long seed = -9019554669489983951L * currentCity.hashCode() * agent.id();
         this.random = new Random(42);
-
+        
         this.centralizedPlanner = new CentralizedAgent(topology, distribution, agent);
         this.wonTasks = new ArrayList<>();
         this.nAuctionRounds = 0;
         this.bidScale = 0.0;
-        this.randomFactor = 0.2;
         this.moneyCollected = 0;
+        this.startCollectingFactor = 0.2;
     }
     
     /**
@@ -81,8 +82,8 @@ public class AuctionAgent implements AuctionBehavior {
     @Override
     public void auctionResult(Task previous, int winner, Long[] bids) {
         // TODO get lowest bid -> adapt
-        System.out.println(String.format("auction result, viewing from agent %d  n round %d, we won %d", + agent.id(), nAuctionRounds, this.wonTasks.size()));
-    
+        System.out.println(String.format("auction result, viewing from agent %d  n round %d, we won %d", +agent.id(), nAuctionRounds, this.wonTasks.size()));
+        
         this.nextOpponentBid = Long.MAX_VALUE;
         this.ourBid = bids[agent.id()];
         for (int i = 0; i < bids.length; i++) {
@@ -95,7 +96,7 @@ public class AuctionAgent implements AuctionBehavior {
             }
             
             if (bids[i] < this.nextOpponentBid && i != agent.id()) {
-               this.nextOpponentBid = bids[i] ;
+                this.nextOpponentBid = bids[i];
             }
             System.out.println(s);
         }
@@ -107,7 +108,7 @@ public class AuctionAgent implements AuctionBehavior {
             this.currentSolution = this.solutionIfAuctionWon;
         }
         
-        this.bidScale = (double)(nextOpponentBid - ourBid) / (nextOpponentBid + ourBid);
+        this.bidScale = (double) (nextOpponentBid - ourBid) / (nextOpponentBid + ourBid);
         System.out.println(this.bidScale);
         this.nAuctionRounds++;
     }
@@ -120,10 +121,10 @@ public class AuctionAgent implements AuctionBehavior {
      * it is assigned the task, and it must deliver it in the final plan. The reward
      * of the task will be set to the agent’s price. It is possible to return null to
      * reject the task unconditionally.
-     *
+     * <p>
      * IDEAS:
-     *  * just get the min cost + some random number (same as template agent)
-     *  * observe behaviour of over next agent
+     * * just get the min cost + some random number (same as template agent)
+     * * observe behaviour of over next agent
      *
      * @param task
      * @return
@@ -145,27 +146,27 @@ public class AuctionAgent implements AuctionBehavior {
             price = this.solutionIfAuctionWon.cost() - this.currentSolution.cost();
         }
         System.out.print("we're asking for " + price + " task is worth: " + task.reward + " bidSCale " + this.bidScale);
-    
+        
         price *= 1 + this.bidScale;
         
         // aggressive underbidding at the start
         if (nAuctionRounds <= 2) {
-            price *= 1 - (2 - nAuctionRounds) * 0.2;
+            price *= 1 - (2 - nAuctionRounds) * this.startCollectingFactor;
         } else {
             final var deficit = this.solutionIfAuctionWon.cost() - this.moneyCollected;
             System.out.print(" adjusting price to get our money back, we need " + deficit + " to break even");
             
-            if (price < deficit) {
+            if (price < deficit && deficit > 0) {
                 price = deficit;
             }
             
             if (price <= 0.0) {
-                price = this.nextOpponentBid - this.ourBid / 2.0;
+                price = (this.nextOpponentBid - this.ourBid) / (double) nAuctionRounds;
             }
         }
         
         System.out.println(" after adjusting we ask for " + price);
-        return (long)Math.ceil(price + 1);
+        return (long) Math.ceil(price + 1);
     }
     
     @Override

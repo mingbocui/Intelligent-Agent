@@ -1,6 +1,5 @@
 package auction.centralized_rla;
 
-import auction.centralized_rla.ActionTask;
 import logist.plan.Plan;
 import logist.simulation.Vehicle;
 import logist.task.Task;

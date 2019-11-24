@@ -23,10 +23,6 @@ public class SolutionSpace {
         this.useSpanningTreeForCost = useSpanningTreeForCost;
     }
     
-    public static List<Plan> emptyPlan(List<Vehicle> vehicles) {
-        return vehicles.stream().map(v -> Plan.EMPTY).collect(Collectors.toList());
-    }
-    
     public SolutionSpace(SolutionSpace solutionSpace) {
         this.vehicles = solutionSpace.vehicles;
         this.tasks = solutionSpace.tasks;
@@ -36,6 +32,9 @@ public class SolutionSpace {
         this.useSpanningTreeForCost = solutionSpace.useSpanningTreeForCost;
     }
     
+    public static List<Plan> emptyPlan(List<Vehicle> vehicles) {
+        return vehicles.stream().map(v -> Plan.EMPTY).collect(Collectors.toList());
+    }
     
     /**
      * as suggested in the slide, "Give all the tasks to the biggest vehicle"
@@ -134,7 +133,7 @@ public class SolutionSpace {
             } else {
                 vehicleStream = vehicleStream.sorted(Comparator.comparingDouble(i -> vehicles.get(i).homeCity().distanceTo(t.deliveryCity)));
             }
-    
+            
             List<Integer> idxCitiesByDist = vehicleStream.collect(Collectors.toList());
             
             int idxIdx = 0;
