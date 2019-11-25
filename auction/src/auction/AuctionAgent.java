@@ -67,7 +67,7 @@ public class AuctionAgent implements AuctionBehavior {
         this.nAuctionRounds = 0;
         this.bidScale = 0.0;
         this.moneyCollected = 0;
-        this.startCollectingFactor = 0.69;
+        this.startCollectingFactor = 0.63;
         this.nGreedyRounds = 2;
     }
     
